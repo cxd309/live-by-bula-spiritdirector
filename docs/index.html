@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live! by BULA Spirit Director</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🥏</text></svg>"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="index.css" />
+    <!--
+      theme.js is not deferred: applyInitialTheme() must run before <body>
+      paints. index.js is a module, so it is deferred automatically
+    -->
+    <script src="js/theme.js"></script>
+    <script type="module" src="js/index.js"></script>
+  </head>
+
+  <body>
+    <header class="hero py-5 mb-5">
+      <div class="container d-flex justify-content-between align-items-start">
+        <div>
+          <h1>🥏 Live! by BULA Spirit Director</h1>
+          <p class="lead mb-1">
+            Spirit of the Game information for spirit directors, drawn from the
+            <a href="https://beachultimate.org/livebybula/">Live! by BULA</a>
+            API.
+          </p>
+          <a
+            class="btn btn-outline-secondary btn-sm mt-2"
+            href="https://github.com/cxd309/live-by-bula-spiritdirector"
+          >
+            View on GitHub
+          </a>
+        </div>
+        <button
+          id="theme-toggle"
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          aria-label="Toggle light/dark theme"
+        >
+        </button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="mb-5">
+        <div class="alert alert-warning" role="alert">
+          This is an unofficial tool and is not endorsed by BULA, WFDF, EUF or
+          UltiOrganizer. Expect things to move and break.
+        </div>
+
+        <h2>Why?</h2>
+        <p>
+          Live! by BULA is an interface primarily designed for players and
+          spectators. As a volunteer in the Spirit Team at WUCC 2026 I found
+          that I wanted the information displayed in a slightly better way. This
+          is an attempt to show some more information to be useful at future
+          tournaments.
+        </p>
+        <p>
+          This project is very limited because it can only show publically
+          available information (no spirit comments or partially completed
+          spirit for a game) and because I have chosen GitHub Pages it must be
+          stateless with no persistance of data. Presistance of data would allow
+          the spirit team to highlight games of interest and keep tracking notes
+          on status and actions taken.
+        </p>
+
+        <h2>How?</h2>
+        <p>
+          This site reads the same public JSON files Live! uses for its own
+          front end. For working and demonstration purposes it can also use
+          archived results from
+          <a href="https://github.com/cxd309/ultimate-tournament-results"
+          >ultimate-tournament-results</a>
+          , which serves the same files.
+        </p>
+        <p>
+          The site is simple static HTML and JavaScript (typed with JSDoc) built
+          from that dynamic content and served with GitHub Pages.
+        </p>
+        <p>
+          Response shapes differ between Live! versions, see <a
+            href="https://cxd309.github.io/live-by-bula-openapi/"
+          >live-by-bula-openapi</a>. Each supported version has its own adapter
+          so that tournaments can be continually supported.
+        </p>
+      </section>
+
+      <section>
+        <h2>Tournaments</h2>
+        <p class="text-body-secondary">
+          Listed in <a href="tournaments.yaml"><code>tournaments.yaml</code></a>
+        </p>
+        <div id="tournaments" class="row row-cols-1 row-cols-lg-2 g-4">
+          <p class="text-body-secondary">Loading&hellip;</p>
+        </div>
+        <p id="tournaments-status" class="text-danger" hidden></p>
+      </section>
+    </main>
+
+    <footer class="container text-body-secondary small">
+      <hr />
+      <p>
+        Built on
+        <a href="https://github.com/cxd309/live-by-bula-openapi"
+        >cxd309/live-by-bula-openapi</a>
+        and
+        <a href="https://github.com/cxd309/ultimate-tournament-results"
+        >cxd309/ultimate-tournament-results</a>. Not affiliated with WFDF, EUF,
+        BULA or Live! by BULA.
+      </p>
+    </footer>
+  </body>
+</html>

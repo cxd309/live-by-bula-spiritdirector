@@ -1,0 +1,49 @@
+# Tournaments this site knows about, newest first
+#
+# slug      season id, used verbatim in filenames (casing varies)
+# host      live deployment, host plus any path prefix
+#           empty for archive only, live is never tried
+# version   Live! version, any form live/versions.js accepts ("v1.9.14", "3.0.6")
+# archive   ultimate-tournament-results archive URL, empty until archived
+#           live is always tried first, the archive is the fallback once the
+#           live deployment is gone
+
+- slug: WUCC2026
+  event: WUCC 2026
+  start_date: "2026-08-15"
+  host: results.wfdf.sport/wucc-2026
+  version: v3.0.6
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/WUCC2026/
+  notes: ""
+
+- slug: wjuc2026
+  event: WJUC 2026
+  start_date: "2026-07-11"
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/wjuc2026/
+  notes: "archive only, originally wjuc.wfdf.sport (1.9.17)"
+
+- slug: wmucc2026
+  event: WMUCC 2026
+  start_date: "2026-06-28"
+  host: results.wfdf.sport/wmucc-2026
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/wmucc2026/
+  notes: "wmucc.wfdf.sport now redirects to results.wfdf.sport without CORS headers"
+
+- slug: pauc2025
+  event: PAUC 2025
+  start_date: "2025-12-01"
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/pauc2025/
+  notes: "archive only, originally results.pauc.sport (1.9.15)"
+
+- slug: e2cf25
+  event: EUCF 2025
+  start_date: "2025-09-26"
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/e2cf25/
+  notes: "archive only, originally eucf.ultimatefederation.eu (1.8.2)"

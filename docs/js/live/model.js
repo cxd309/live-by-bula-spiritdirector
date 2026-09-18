@@ -1,0 +1,67 @@
+// @ts-check
+
+// Package model: the version-independent shapes every live/vXX_YY_ZZ adapter
+// translates its own Live! response into
+// pages only ever import from here and versions.js, never from a vXX_YY_ZZ
+// directly, so a new Live! version means a new adapter and nothing else
+
+/**
+ * One entry of tournaments.yaml
+ * @typedef {Object} Tournament
+ * @property {string} slug        season id, used verbatim in filenames (casing varies)
+ * @property {string} event       display name
+ * @property {string} start_date  YYYY-MM-DD
+ * @property {string} host        live deployment, host plus any path prefix
+ * @property {string} version     Live! version key, any form versions.js normalises
+ * @property {string} archive     ultimate-tournament-results archive URL, "" while the event is live
+ * @property {string} notes
+ */
+
+/**
+ * Where one tournament's {seasonId}_*.json files are served from
+ * @typedef {Object} Source
+ * @property {"live" | "archive"} kind
+ * @property {URL} base          directory the season files hang off, trailing slash
+ * @property {string} seasonId
+ * @property {string} appVersion  heartbeat app_version, "" for archive sources
+ * @property {string} liveError   why the live deployment wasn't used, "" for live sources
+ */
+
+/**
+ * @typedef {Object} SpiritCategory
+ * @property {string} key    field name in spirit score objects, e.g. "cat1"
+ * @property {string} label
+ * @property {number} min
+ * @property {number} max
+ */
+
+/**
+ * @typedef {Object} Division
+ * @property {number} id     series_id, the id _spirit_ and _statistics_ take
+ * @property {string} name
+ * @property {number} teams
+ */
+
+/**
+ * Headline facts about one tournament, enough for the homepage
+ * @typedef {Object} TournamentSummary
+ * @property {string} name
+ * @property {string} start       YYYY-MM-DD
+ * @property {string} end         YYYY-MM-DD
+ * @property {string} timezone
+ * @property {string} status      Live!'s season status, e.g. "completed"
+ * @property {Division[]} divisions
+ * @property {number} teams
+ * @property {number} players
+ * @property {SpiritCategory[]} spiritCategories
+ */
+
+/**
+ * What every live/vXX_YY_ZZ/index.js module exports
+ * @typedef {Object} VersionAdapter
+ * @property {string} key      canonical key, e.g. "v01_09_14"
+ * @property {string} covers   Live! releases this adapter handles, e.g. "1.9.14 - 1.9.17"
+ * @property {(source: Source) => Promise<TournamentSummary>} loadSummary
+ */
+
+export {};
