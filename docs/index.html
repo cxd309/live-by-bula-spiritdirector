@@ -100,8 +100,25 @@
         <p class="text-body-secondary">
           Listed in <a href="tournaments.yaml"><code>tournaments.yaml</code></a>
         </p>
-        <div id="tournaments" class="row row-cols-1 row-cols-lg-2 g-4">
-          <p class="text-body-secondary">Loading&hellip;</p>
+        <div class="table-responsive">
+          <table class="table table-hover table-striped align-middle live-table">
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Tournament</th>
+                <th scope="col">Location</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-center">Divisions</th>
+                <th scope="col" class="text-center">Teams</th>
+                <th scope="col"><span class="visually-hidden">Open</span></th>
+              </tr>
+            </thead>
+            <tbody id="tournaments">
+              <tr>
+                <td colspan="7" class="text-body-secondary">Loading&hellip;</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <p id="tournaments-status" class="text-danger" hidden></p>
       </section>

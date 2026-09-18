@@ -10,3 +10,33 @@ body {
 code {
   font-size: 0.85em;
 }
+
+/* a threshold input sitting inside a heading's sentence */
+.threshold {
+  width: 4.5rem;
+}
+
+/*
+  Live!'s table headers: muted, bold, uppercase
+  Bootstrap colours each th itself, so a class on thead wouldn't reach them
+*/
+.live-table thead th {
+  color: var(--bs-secondary-color);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* a header cell's sort control, looking like the plain header text */
+.sort-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+}
+
+.sort-indicator {
+  margin-left: 0.25em;
+}

@@ -4,20 +4,30 @@
 // openapi-1.9.14.yaml for the full response shapes
 // only the fields used here are typed
 
-import { getSeasonJSON } from "../source.js";
+import { loadGameTeams, opponent } from "../games.js";
+import { buildDivisions } from "../reference.js";
+import { getSeasonJSON, mapLimit } from "../source.js";
 
 /**
  * @typedef {import("../model.js").Source} Source
  * @typedef {import("../model.js").SpiritCategory} SpiritCategory
+ * @typedef {import("../model.js").SpiritScore} SpiritScore
  * @typedef {import("../model.js").TournamentSummary} TournamentSummary
+ */
+
+/**
+ * The slice of _teams_{teamId}.json this file uses
+ * 1.9 enforces no visibility, a row exists once the opponent has submitted
+ * @typedef {Object} TeamDetail
+ * @property {({game_id: number, total: number} & Record<string, number>)[]} [spiritreceived]
  */
 
 /**
  * @typedef {Object} Reference
  * @property {{name: string, starttime: string, endtime: string, timezone: string, status: string, player_count: number}} season
- * @property {{series_id: number, name: string, ordering: string}[]} series
- * @property {{team_id: number, series: number}[]} teams
  */
+
+/** @typedef {Reference & import("../reference.js").SharedReference} FullReference */
 
 export const key = "v01_09_14";
 export const covers = "1.9.14 - 1.9.17";
@@ -40,24 +50,41 @@ const spiritCategories = [
  * @returns {Promise<TournamentSummary>}
  */
 export async function loadSummary(source) {
-  /** @type {Reference} */
+  /** @type {FullReference} */
   const ref = await getSeasonJSON(source, "_reference");
-  const divisions = [...ref.series]
-    .sort((a, b) => a.ordering.localeCompare(b.ordering))
-    .map((s) => ({
-      id: s.series_id,
-      name: s.name,
-      teams: ref.teams.filter((t) => t.series === s.series_id).length,
-    }));
   return {
     name: ref.season.name,
     start: ref.season.starttime.slice(0, 10),
     end: ref.season.endtime.slice(0, 10),
     timezone: ref.season.timezone,
     status: ref.season.status,
-    divisions,
+    divisions: buildDivisions(ref),
     teams: ref.teams.length,
     players: ref.season.player_count,
     spiritCategories,
   };
+}
+
+/**
+ * @param {Source} source
+ * @param {TournamentSummary} summary
+ * @returns {Promise<SpiritScore[]>}
+ */
+export async function loadSpiritScores(source, summary) {
+  const teams = summary.divisions.flatMap((d) => d.teams.map((t) => ({ teamId: t.id, divisionId: d.id })));
+  const games = await loadGameTeams(source);
+  const perTeam = await mapLimit(teams, 8, async ({ teamId, divisionId }) => {
+    /** @type {TeamDetail} */
+    const detail = await getSeasonJSON(source, `_teams_${teamId}`);
+    return (detail.spiritreceived ?? []).map((r) => ({
+      gameId: r.game_id,
+      teamId,
+      fromTeamId: opponent(games.get(r.game_id), teamId),
+      time: games.get(r.game_id)?.time ?? "",
+      divisionId,
+      categories: Object.fromEntries(spiritCategories.map((c) => [c.key, r[c.key]])),
+      total: r.total,
+    }));
+  });
+  return perTeam.flat();
 }

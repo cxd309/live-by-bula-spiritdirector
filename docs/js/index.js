@@ -1,12 +1,11 @@
 // @ts-check
 
-// Homepage: one card per tournament in tournaments.yaml, filled in from
-// that tournament's own Live! data
+// Homepage: one table row per tournament in tournaments.yaml, shown straight
+// away from the yaml then filled in from that tournament's own Live! data
 
-// @ts-ignore -- no local types for a CDN module, see JsYaml below
-import jsyaml from "https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.mjs";
 import { resolveSource } from "./live/source.js";
 import { getVersion } from "./live/versions.js";
+import { errorMessage, esc, formatDateRange, loadTournamentList, sourceBadge, tournamentHref } from "./page.js";
 
 /**
  * @typedef {import("./live/model.js").Tournament} Tournament
@@ -15,126 +14,115 @@ import { getVersion } from "./live/versions.js";
  */
 
 /**
- * The slice of js-yaml's API this file uses
- * typed by hand since there's no @types/js-yaml install here
- * @typedef {Object} JsYaml
- * @property {(text: string) => unknown} load
+ * A row's cells, loading or loaded
+ * @typedef {Object} RowCells
+ * @property {string} date
+ * @property {string} location
+ * @property {string} status
+ * @property {string} divisions
+ * @property {string} teams
  */
-
-/** @type {JsYaml} */
-const yaml = jsyaml;
-
-/**
- * Escapes text for interpolation into innerHTML
- * everything from a Live! deployment is third-party data
- * @param {string | number} value
- * @returns {string}
- */
-function esc(value) {
-  return String(value).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-}
 
 /**
  * @param {Tournament} t
- * @param {Source} source
+ * @param {RowCells} cells
  * @returns {string} an HTML snippet
  */
-function sourceBadge(t, source) {
-  const href = esc(new URL(`${source.seasonId}_reference.json`, source.base).href);
-  if (source.kind === "live") {
-    return `<a class="badge text-bg-success text-decoration-none" href="${href}">Live</a>`;
-  }
-  // hovering the badge says why live wasn't used
-  const title = esc(
-    t.host ? `https://${t.host} unavailable, using archive: ${source.liveError}` : "archive only, no live host",
-  );
-  return `<a class="badge text-bg-secondary text-decoration-none" href="${href}" title="${title}">Archive</a>`;
+function row(t, cells) {
+  const href = esc(tournamentHref(t.slug));
+  return `
+    <tr data-slug="${esc(t.slug)}">
+      <td class="text-nowrap">${cells.date}</td>
+      <td><a href="${href}">${esc(t.event)}</a></td>
+      <td>${cells.location}</td>
+      <td>${cells.status}</td>
+      <td class="text-center">${cells.divisions}</td>
+      <td class="text-center">${cells.teams}</td>
+      <td class="text-end"><a class="btn btn-sm btn-primary" href="${href}">Open</a></td>
+    </tr>
+  `;
+}
+
+/**
+ * The row before its Live! data arrives, from the yaml alone
+ * @param {Tournament} t
+ * @returns {RowCells}
+ */
+function loadingCells(t) {
+  const loading = `<span class="text-body-secondary">&hellip;</span>`;
+  return {
+    date: esc(formatDateRange(t.start_date, "")),
+    location: t.location ? esc(t.location) : loading,
+    status: loading,
+    divisions: loading,
+    teams: loading,
+  };
 }
 
 /**
  * @param {Tournament} t
  * @param {Source} source
  * @param {TournamentSummary} s
- * @returns {string} an HTML snippet, the card body
+ * @returns {RowCells}
  */
-function renderSummary(t, source, s) {
-  const divisions = s.divisions
-    .map((d) =>
-      `<li class="list-group-item d-flex justify-content-between">${
-        esc(d.name)
-      }<span class="text-body-secondary">${d.teams} teams</span></li>`
-    )
-    .join("");
-  const categories = s.spiritCategories
-    .map((c) => `<li>${esc(c.label)} <span class="text-body-secondary">(${c.min}-${c.max})</span></li>`)
-    .join("");
-  return `
-    <p class="text-body-secondary mb-2">
-      ${esc(s.start)} to ${esc(s.end)} · ${esc(s.timezone)} · ${esc(s.status)}
-    </p>
-    <p class="mb-3">
-      ${sourceBadge(t, source)}
-      ${t.host ? `<code>${esc(t.host)}</code>` : ""}
-      <code>${esc(t.version)}</code>
-    </p>
-    <p class="mb-2"><strong>${s.teams}</strong> teams · <strong>${s.players}</strong> players</p>
-    <ul class="list-group list-group-flush mb-3">${divisions}</ul>
-    <h3 class="h6">Spirit categories</h3>
-    <ol class="small mb-0">${categories}</ol>
-  `;
+function loadedCells(t, source, s) {
+  return {
+    date: esc(formatDateRange(s.start, s.end)),
+    location: esc(t.location || source.location),
+    status: `${esc(s.status)} ${sourceBadge(t, source)}`,
+    divisions: String(s.divisions.length),
+    teams: String(s.teams),
+  };
 }
 
 /**
- * Adds one card to the grid, then fills it in once its data arrives
+ * Fills one tournament's row in once its data arrives
  * tournaments load in parallel and fail independently
- * @param {HTMLElement} grid
+ * @param {HTMLTableRowElement} tr
  * @param {Tournament} t
  */
-async function loadTournament(grid, t) {
-  const col = document.createElement("div");
-  col.className = "col";
-  col.innerHTML = `
-    <div class="card h-100">
-      <div class="card-header"><h2 class="h5 mb-0">${esc(t.event)}</h2></div>
-      <div class="card-body"><p class="text-body-secondary mb-0">Loading&hellip;</p></div>
-    </div>
-  `;
-  grid.append(col);
-  const body = /** @type {HTMLElement} */ (col.querySelector(".card-body"));
-
+async function loadTournament(tr, t) {
   try {
     const adapter = getVersion(t.version);
     const source = await resolveSource(t);
     const summary = await adapter.loadSummary(source);
-    body.innerHTML = renderSummary(t, source, summary);
+    tr.outerHTML = row(t, loadedCells(t, source, summary));
   } catch (err) {
-    body.innerHTML = `<p class="text-danger mb-0">Couldn't load ${esc(t.event)}: ${
-      esc(err instanceof Error ? err.message : String(err))
-    }</p>`;
+    const cells = loadingCells(t);
+    tr.outerHTML = row(t, {
+      ...cells,
+      location: t.location ? esc(t.location) : "",
+      status: `<span class="text-danger">Couldn't load: ${esc(errorMessage(err))}</span>`,
+      divisions: "",
+      teams: "",
+    });
   }
 }
 
 /**
- * @param {HTMLElement} grid
+ * @param {HTMLElement} tbody
  * @param {HTMLElement} status
  */
-async function loadTournaments(grid, status) {
+async function loadTournaments(tbody, status) {
   try {
-    const res = await fetch("tournaments.yaml", { cache: "no-cache" });
-    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-    const tournaments = /** @type {Tournament[]} */ (yaml.load(await res.text()));
-    grid.innerHTML = "";
-    await Promise.all(tournaments.map((t) => loadTournament(grid, t)));
+    const tournaments = await loadTournamentList();
+    tbody.innerHTML = tournaments.map((t) => row(t, loadingCells(t))).join("");
+    await Promise.all(
+      tournaments.map((t) => {
+        const tr = /** @type {HTMLTableRowElement} */ (tbody.querySelector(`tr[data-slug="${CSS.escape(t.slug)}"]`));
+        return loadTournament(tr, t);
+      }),
+    );
   } catch (err) {
-    grid.innerHTML = "";
+    tbody.innerHTML = "";
     status.hidden = false;
-    status.textContent = `Couldn't load tournaments.yaml: ${err instanceof Error ? err.message : String(err)}`;
+    status.textContent = `Couldn't load tournaments: ${errorMessage(err)}`;
   }
 }
 
 // modules are deferred, so the DOM is already parsed here
-const grid = document.getElementById("tournaments");
+const tbody = document.getElementById("tournaments");
 const status = document.getElementById("tournaments-status");
-if (grid && status) {
-  loadTournaments(grid, status);
+if (tbody && status) {
+  loadTournaments(tbody, status);
 }

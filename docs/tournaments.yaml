@@ -7,43 +7,122 @@
 # archive   ultimate-tournament-results archive URL, empty until archived
 #           live is always tried first, the archive is the fallback once the
 #           live deployment is gone
+# location  where it's played, empty falls back to the live heartbeat's
+#           TOURNAMENT_LOCATION (UTR archives don't carry it)
 
 - slug: WUCC2026
   event: WUCC 2026
   start_date: "2026-08-15"
+  location: "Limerick, Ireland"
   host: results.wfdf.sport/wucc-2026
   version: v3.0.6
   archive: https://cxd309.github.io/ultimate-tournament-results/archive/WUCC2026/
   notes: ""
 
+- slug: 26EYUCVIE
+  event: EYUC U17 2026
+  start_date: "2026-08-03"
+  location: ""
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/26EYUCVIE/
+  notes: "archive only, originally eyuc-schedule.ultimatefederation.eu (1.9.17)"
+
 - slug: wjuc2026
   event: WJUC 2026
   start_date: "2026-07-11"
-  host: ""
+  location: "Logroño, Spain"
+  host: results.wfdf.sport/wjuc-2026
   version: v1.9.14
   archive: https://cxd309.github.io/ultimate-tournament-results/archive/wjuc2026/
-  notes: "archive only, originally wjuc.wfdf.sport (1.9.17)"
+  notes: "wjuc.wfdf.sport redirects to results.wfdf.sport/wjuc-2026"
 
 - slug: wmucc2026
   event: WMUCC 2026
   start_date: "2026-06-28"
+  location: "Nottingham, United Kingdom"
   host: results.wfdf.sport/wmucc-2026
   version: v1.9.14
   archive: https://cxd309.github.io/ultimate-tournament-results/archive/wmucc2026/
   notes: "wmucc.wfdf.sport now redirects to results.wfdf.sport without CORS headers"
 
+- slug: 26ELITLEU
+  event: Elite Invite 2026
+  start_date: "2026-05-23"
+  location: ""
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/26ELITLEU/
+  notes: "archive only, originally elite-invite.ultimatefederation.eu (1.9.17)"
+
+- slug: euic2026
+  event: EUIC 2026
+  start_date: "2026-01-29"
+  location: "Amsterdam, Netherlands"
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/euic2026/
+  notes: "archive only, originally euic-schedule.ultimatefederation.eu (1.9.16)"
+
 - slug: pauc2025
   event: PAUC 2025
   start_date: "2025-12-01"
+  location: ""
   host: ""
   version: v1.9.14
   archive: https://cxd309.github.io/ultimate-tournament-results/archive/pauc2025/
   notes: "archive only, originally results.pauc.sport (1.9.15)"
 
+- slug: wbuc2025
+  event: WBUC 2025
+  start_date: "2025-11-16"
+  location: ""
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/wbuc2025/
+  notes: "archive only, originally wbuc.wfdf.sport (1.9.14)"
+
 - slug: e2cf25
   event: EUCF 2025
   start_date: "2025-09-26"
+  location: ""
   host: ""
   version: v1.9.14
   archive: https://cxd309.github.io/ultimate-tournament-results/archive/e2cf25/
   notes: "archive only, originally eucf.ultimatefederation.eu (1.8.2)"
+
+- slug: WWUC2025
+  event: WWUC 2025
+  start_date: "2025-09-18"
+  location: "Lithuania"
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/WWUC2025/
+  notes: "archive only, originally results.wfdf.sport/wwuc (dev)"
+
+- slug: ebucc2025
+  event: EBUCC 2025
+  start_date: "2025-06-06"
+  location: "Gdańsk, Poland"
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/ebucc2025/
+  notes: "archive only, originally live.ebucc.eu (20250612.082841)"
+
+- slug: wbucc2024
+  event: WBUCC 2024
+  start_date: "2024-10-14"
+  location: ""
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/wbucc2024/
+  notes: "archive only, originally live.wbucc.org (no app_version)"
+
+- slug: EBUCC2023
+  event: EBUCC 2023
+  start_date: "2023-06-09"
+  location: ""
+  host: ""
+  version: v1.9.14
+  archive: https://cxd309.github.io/ultimate-tournament-results/archive/EBUCC2023/
+  notes: "archive only, originally live.ebucc.eu (20250612.082841)"
