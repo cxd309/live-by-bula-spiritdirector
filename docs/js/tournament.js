@@ -198,10 +198,17 @@ function th(label, numeric, title = "") {
  * @returns {string} an HTML snippet
  */
 function spiritHead(categories, total = "Total", totalTitle = "") {
-  return categories
-    .map((c) => th(esc(shortCategory(c.label)), true, `${c.label} (${c.min}-${c.max})`))
-    .join("")
-    + th(esc(total), true, totalTitle);
+  return categoryHead(categories) + th(esc(total), true, totalTitle);
+}
+
+/**
+ * Header cells for the spirit categories alone, for a table whose totals
+ * have their own columns
+ * @param {SpiritCategory[]} categories
+ * @returns {string} an HTML snippet
+ */
+function categoryHead(categories) {
+  return categories.map((c) => th(esc(shortCategory(c.label)), true, `${c.label} (${c.min}-${c.max})`)).join("");
 }
 
 /**
@@ -361,14 +368,32 @@ function openButton(href) {
 }
 
 /**
+ * What this team gave back in the same game, just the total, coloured when
+ * anything about that score is flagged, its total or any category
+ * the detail is on that score's own row in this table, this only says to go
+ * and look
+ * @param {SpiritScore | undefined} back  undefined when that half isn't in yet
+ * @param {SpiritCategory[]} categories
+ * @param {Thresholds} t
+ * @returns {string} an HTML snippet, one <td>
+ */
+function givenCell(back, categories, t) {
+  if (!back) return `<td class="text-center">–</td>`;
+  const issue = scoreIssues(back, categories, t).size > 0;
+  const highlight = scoreHighlights(back, categories, t).size > 0;
+  return `<td class="${cellClass(issue, highlight)}">${back.total}</td>`;
+}
+
+/**
  * Every score with an issue or a highlight, earliest game first, the cells
  * responsible coloured
  * averages alongside, to tell a harsh giver from a struggling team, each
  * leaving this game out so the score being judged isn't part of its own
  * comparison, and left off when there's no other game to average:
  * - Team: the team given the score, and what it averages received
+ * - Received: this score, and what the giver averages given
+ * - Given: what this team gave back in the same game
  * - From: the team that gave it, and what it averages received
- * - Total: this score, and what the giver averages given
  * @param {SpiritScore[]} scores
  * @param {SpiritCategory[]} categories
  * @param {Names} names
@@ -380,10 +405,11 @@ function gameTable(scores, categories, names, t, tallies) {
   const head = `
     <tr>
       ${th("Time", false)}
-      ${th("Division", false)}
       ${th("Team", false, "the team given this score, and its average received, excluding this game")}
+      ${th("Received", true, "what this team was given, and the average its opponent gives, excluding this game")}
+      ${th("Given", true, "what this team gave back in the same game")}
       ${th("From", false, "the team that gave this score, and its average received, excluding this game")}
-      ${spiritHead(categories, "Total", "this score, and the average the giving team gives, excluding this game")}
+      ${categoryHead(categories)}
       <th scope="col"><span class="visually-hidden">Open</span></th>
     </tr>
   `;
@@ -398,22 +424,19 @@ function gameTable(scores, categories, names, t, tallies) {
     .map(({ score, issues, highlights }) => {
       /** @param {string} key */
       const cls = (key) => cellClass(issues.has(key), highlights.has(key));
+      // the other half of the pair: what this team gave its opponent
+      const back = tallies.scoreFor(score.gameId, score.fromTeamId);
       const cells = categories.map((c) => `<td class="${cls(c.key)}">${score.categories[c.key]}</td>`).join("");
       return `
         <tr>
           ${gameTimeCell(score, names.gameHref(score))}
-          ${names.division(score.divisionId)}
           ${names.team(score.teamId, meanWithout(tallies.received.get(score.teamId), score.total))}
-          ${
-        names.team(
-          score.fromTeamId,
-          meanWithout(tallies.received.get(score.fromTeamId), tallies.scoreFor(score.gameId, score.fromTeamId)?.total),
-        )
-      }
-          ${cells}
           <td class="${cls("total")} text-nowrap">${
         withAvg(String(score.total), meanWithout(tallies.given.get(score.fromTeamId), score.total), false)
       }</td>
+          ${givenCell(back, categories, t)}
+          ${names.team(score.fromTeamId, meanWithout(tallies.received.get(score.fromTeamId), back?.total))}
+          ${cells}
           <td class="text-end">${openButton(names.gameHref(score))}</td>
         </tr>
       `;
