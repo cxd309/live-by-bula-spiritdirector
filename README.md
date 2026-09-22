@@ -8,7 +8,7 @@ Unofficial, not endorsed by BULA, WFDF, EUF or UltiOrganizer.
 
 ### Homepage
 
-One row per tournament in [`docs/tournaments.yaml`](docs/tournaments.yaml): dates, location, Live!'s season status with a Live/Archive badge for where the data is coming from, and the number of divisions and teams.
+One row per tournament in [`docs/tournaments.yaml`](docs/tournaments.yaml): dates, location, Live!'s season status with a Live/Archive badge for where the data is coming from, and the number of divisions and teams. The status links to the tournament's own Live! homepage, and Open goes to its page here.
 
 ### Tournament
 
@@ -18,15 +18,23 @@ One row per tournament in [`docs/tournaments.yaml`](docs/tournaments.yaml): date
 - **Teams** teams whose average received total is below or above the thresholds
 - **Games** individual scores with a total below or above the thresholds, or any category at its minimum or maximum
 
-Issues are coloured red and highlights green, on the cells that put the row there. In the Games tab each team and total carries an average in brackets, always leaving that game out, and left off when there is no other game to average:
+Issues are coloured red and highlights green, on the cells that put the row there.
 
-| Column | Bracket                                        |
-| ------ | ---------------------------------------------- |
-| Team   | average received by the team given the score   |
-| From   | average received by the team that gave it      |
-| Total  | average given by the team that gave this score |
+The Games tab is one row per score received, with the reply from the same game beside it, so a harsh giver reads differently from a struggling team:
 
-Every column sorts by clicking its header. Spirit categories are always shown as shorthand (Rules, Cont, Fair, Att, Comm).
+| Column       | Holds                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------- |
+| Time         | game start, linking to that game on Live!                                                       |
+| Team         | the team given this score, and its average received                                             |
+| Received     | this score, and the average its opponent gives                                                  |
+| Given        | what this team gave back in the same game, coloured when that score is flagged in its own right |
+| From         | the team that gave this score, and its average received                                         |
+| Rules … Comm | this score by category                                                                          |
+| Open         | that game on Live!                                                                              |
+
+Every bracketed average leaves that game out, so a score is never part of its own comparison, and is left off when there is no other game to average. A coloured Given cell means that score has a row of its own with the detail. Team and From link to that team's spirit tab on Live!, and in the Overview the division links to its Live! page. Archived tournaments have no live site to link to, so they show no links and no Open button.
+
+Every column sorts by clicking its header, marked by a filter icon that becomes a sort arrow. Spirit categories are always shown as shorthand (Rules, Cont, Fair, Att, Comm).
 
 The view is kept in the URL, so a link opens exactly what was on screen. Defaults are left out:
 
@@ -99,6 +107,7 @@ Pages import only from `model.js`, `source.js` and `versions.js`, never from a `
 | `docs/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`       |
 | `docs/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version               |
 | `docs/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                   |
+| `docs/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule       |
 | `docs/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                          |
 
 ### Types
