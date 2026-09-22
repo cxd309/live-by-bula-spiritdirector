@@ -5,8 +5,8 @@
 // in with markup alone:
 // - <table data-sort-key="…">, a name to remember its sort under
 // - a <button class="sort-button"> in each sortable <th>, plus a
-//   <span class="sort-indicator"> for the arrow, holding the idle glyph so
-//   an untouched table still shows every column is sortable
+//   <span class="sort-indicator bi bi-filter"> for the sort icon, set on
+//   every sortable column so an untouched table still shows they sort
 // - data-sort-type="number" on a <th> to sort that column numerically
 // - data-pinned on a <tr> to keep it above the sorted rows
 // - data-sort on a <td> to sort by that instead of its text, for display
@@ -18,11 +18,15 @@
  * @property {"asc" | "desc"} dir
  */
 
-/** @type {Record<SortState["dir"], string>} */
-const arrows = { asc: "▲", desc: "▼" };
+/**
+ * Bootstrap Icons: Live!'s own funnel marks a column as sortable, but its
+ * sorted icon is a plain filled circle, so the direction shows here instead
+ * @type {Record<SortState["dir"], string>}
+ */
+const arrows = { asc: "bi-sort-up-alt", desc: "bi-sort-down-alt" };
 
 /** shown on every sortable column that isn't the sorted one */
-export const idleArrow = "⇅";
+export const idleIcon = "bi-filter";
 
 /**
  * @param {HTMLTableRowElement} row
@@ -66,15 +70,13 @@ export function sortTable(table, { column, dir }) {
     cell.removeAttribute("aria-sort");
     const arrow = cell.querySelector(".sort-indicator");
     if (arrow) {
-      arrow.textContent = idleArrow;
-      arrow.classList.remove("sorted");
+      arrow.className = `sort-indicator bi ${idleIcon}`;
     }
   }
   th.setAttribute("aria-sort", dir === "asc" ? "ascending" : "descending");
   const arrow = th.querySelector(".sort-indicator");
   if (arrow) {
-    arrow.textContent = arrows[dir];
-    arrow.classList.add("sorted");
+    arrow.className = `sort-indicator bi ${arrows[dir]} sorted`;
   }
 }
 
