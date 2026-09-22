@@ -80,6 +80,8 @@ export async function loadSpiritScores(source, summary) {
       gameId: r.game_id,
       teamId,
       fromTeamId: opponent(games.get(r.game_id), teamId),
+      homeTeamId: games.get(r.game_id)?.home ?? 0,
+      visitorTeamId: games.get(r.game_id)?.visitor ?? 0,
       time: games.get(r.game_id)?.time ?? "",
       divisionId,
       categories: Object.fromEntries(spiritCategories.map((c) => [c.key, r[c.key]])),

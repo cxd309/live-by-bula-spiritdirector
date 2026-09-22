@@ -28,6 +28,8 @@
  * @property {string} liveError   why the live deployment wasn't used, "" for live sources
  * @property {string} lastUpdated heartbeat last_updated_utc, when the archive was taken for an archive
  * @property {string} location    heartbeat TOURNAMENT_LOCATION, "" when not sent (UTR archives don't)
+ * @property {string} appRoot     where Live!'s own pages are served, "" for an archive
+ * @property {boolean} defaultToLive  heartbeat DEFAULT_TO_LIVE: false means its pages need ?view=live/index
  */
 
 /**
@@ -87,6 +89,8 @@
  * @property {number} gameId
  * @property {number} teamId      the team the score was given to
  * @property {number} fromTeamId  the opponent who gave it, 0 when the games list doesn't say
+ * @property {number} homeTeamId  the game's home team, 0 when not known, for Live!'s game URLs
+ * @property {number} visitorTeamId  likewise the visitors
  * @property {string} time        game start in the event's local time, "" when unknown
  * @property {number} divisionId
  * @property {Record<string, number>} categories  keyed by SpiritCategory.key

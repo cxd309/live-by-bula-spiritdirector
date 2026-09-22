@@ -3,6 +3,7 @@
 // Homepage: one table row per tournament in tournaments.yaml, shown straight
 // away from the yaml then filled in from that tournament's own Live! data
 
+import { liveTournamentURL } from "./live/links.js";
 import { resolveSource } from "./live/source.js";
 import { getVersion } from "./live/versions.js";
 import { errorMessage, esc, formatDateRange, loadTournamentList, sourceBadge, tournamentHref } from "./page.js";
@@ -22,6 +23,16 @@ import { errorMessage, esc, formatDateRange, loadTournamentList, sourceBadge, to
  * @property {string} divisions
  * @property {string} teams
  */
+
+/**
+ * @param {string} html  the status, an HTML snippet
+ * @param {Source} source
+ * @returns {string} an HTML snippet, linked to Live! for a live source
+ */
+function liveStatus(html, source) {
+  const href = liveTournamentURL(source);
+  return href ? `<a href="${esc(href)}" title="open in Live! by BULA">${html}</a>` : html;
+}
 
 /**
  * @param {Tournament} t
@@ -69,7 +80,8 @@ function loadedCells(t, source, s) {
   return {
     date: esc(formatDateRange(s.start, s.end)),
     location: esc(t.location || source.location),
-    status: `${esc(s.status)} ${sourceBadge(t, source)}`,
+    // the status links to the tournament's own Live! pages, where there are any
+    status: liveStatus(esc(s.status), source) + ` ${sourceBadge(t, source)}`,
     divisions: String(s.divisions.length),
     teams: String(s.teams),
   };

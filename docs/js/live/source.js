@@ -14,7 +14,10 @@
  * @typedef {Object} Heartbeat
  * @property {string} app_version
  * @property {string} last_updated_utc
- * @property {{LIVE_SEASON_ID?: string, STATIC_CACHE_BASE_URL?: string, TOURNAMENT_LOCATION?: string}} [config]
+ * @property {{
+ *   LIVE_SEASON_ID?: string, STATIC_CACHE_BASE_URL?: string, TOURNAMENT_LOCATION?: string,
+ *   UO_URL_PREFIX?: string, DEFAULT_TO_LIVE?: boolean
+ * }} [config]
  */
 
 /** A non-2xx response, keeping the status so callers can tell a 404 apart */
@@ -98,6 +101,9 @@ async function heartbeatSource(t, kind, heartbeatURL, liveError) {
     liveError,
     lastUpdated: hb.last_updated_utc,
     location: hb.config?.TOURNAMENT_LOCATION ?? "",
+    // UO_URL_PREFIX is where Live!'s own pages hang off this host
+    appRoot: kind === "live" ? new URL(hb.config?.UO_URL_PREFIX || "/", url.origin).href : "",
+    defaultToLive: hb.config?.DEFAULT_TO_LIVE === true,
   };
   // the static files can be deleted after an event while the heartbeat
   // stays up, so check one exists before trusting the deployment

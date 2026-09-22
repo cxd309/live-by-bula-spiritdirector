@@ -9,6 +9,7 @@
 // issues are coloured red and highlights green, thresholds come from the
 // query string and are editable on the page
 
+import { liveDivisionURL, liveGameURL, liveTeamSpiritURL } from "./live/links.js";
 import { resolveSource } from "./live/source.js";
 import { getVersion } from "./live/versions.js";
 import {
@@ -61,9 +62,11 @@ import {
 /**
  * Table cells for the ids the spirit scores carry, each shown as its
  * shorthand with the full name on hover
+ * cells link back into Live! itself wherever there is a live deployment
  * @typedef {Object} Names
  * @property {(teamId: number, avg?: number) => string} team  a <td>, with avg after the name when given
  * @property {(divisionId: number) => string} division          a <td>
+ * @property {(score: SpiritScore) => string | null} gameHref   that game's page on Live!
  */
 
 /**
@@ -119,24 +122,49 @@ function withAvg(html, avg, muted = true) {
 
 /**
  * @param {TournamentSummary} s
+ * @param {Source} source
  * @returns {Names}
  */
-function namesFor(s) {
-  const teams = new Map(s.divisions.flatMap((d) => d.teams.map((t) => [t.id, t])));
+function namesFor(s, source) {
+  const teams = new Map(s.divisions.flatMap((d) => d.teams.map((t) => [t.id, { ...t, divisionId: d.id }])));
   const divisions = new Map(s.divisions.map((d) => [d.id, d.name]));
+  /** @param {number} id */
+  const divisionName = (id) => divisions.get(id) ?? "–";
   return {
     team: (id, avg) => {
       const t = teams.get(id);
       if (!t) return "<td>–</td>";
+      const href = liveTeamSpiritURL(source, divisionName(t.divisionId), t.name, t.id);
       return `<td class="text-nowrap" title="${esc(t.name)}" data-sort="${esc(t.name)}">${
-        withAvg(responsive(t.name, t.abbreviation, shortenBelow.team), avg)
+        link(withAvg(responsive(t.name, t.abbreviation, shortenBelow.team), avg), href, "team spirit on Live!")
       }</td>`;
     },
     division: (id) => {
-      const name = divisions.get(id) ?? "–";
-      return shortCell(name, shortDivision(name), shortenBelow.division);
+      const name = divisionName(id);
+      const inner = link(responsive(name, shortDivision(name), shortenBelow.division), liveDivisionURL(source, name));
+      return `<td title="${esc(name)}" data-sort="${esc(name)}">${inner}</td>`;
     },
+    gameHref: (score) =>
+      liveGameURL(
+        source,
+        divisionName(score.divisionId),
+        teams.get(score.homeTeamId)?.name ?? "",
+        teams.get(score.visitorTeamId)?.name ?? "",
+        score.gameId,
+      ),
   };
+}
+
+/**
+ * Wraps content in a link, or leaves it alone when there's nowhere to go,
+ * as on every archive source
+ * @param {string} html
+ * @param {string | null} href
+ * @param {string} [title]
+ * @returns {string} an HTML snippet
+ */
+function link(html, href, title = "open in Live! by BULA") {
+  return href ? `<a class="text-reset" href="${esc(href)}" title="${esc(title)}">${html}</a>` : html;
 }
 
 /**
@@ -202,13 +230,14 @@ function table(head, rows, sortKey) {
  * @param {SpiritAverage} avg
  * @param {SpiritCategory[]} categories
  * @param {boolean} pinned  stays on top whatever the sort
+ * @param {string | null} [href]  the division's page on Live!
  * @returns {string} an HTML snippet
  */
-function averageRow(label, teams, avg, categories, pinned) {
+function averageRow(label, teams, avg, categories, pinned, href = null) {
   const cells = categories.map((c) => `<td class="text-center">${fmt(avg.categories[c.key])}</td>`).join("");
   return `
     <tr ${pinned ? "data-pinned" : ""}>
-      <td>${esc(label)}</td>
+      <td data-sort="${esc(label)}">${link(esc(label), href)}</td>
       <td class="text-center">${teams}</td>
       <td class="text-center">${avg.games}</td>
       ${cells}
@@ -234,9 +263,10 @@ function thresholdInput(t, key, label) {
  * then each division
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
+ * @param {Source} source
  * @returns {string} an HTML snippet
  */
-function overviewTable(s, scores) {
+function overviewTable(s, scores, source) {
   const cats = s.spiritCategories;
   const head = `
     <tr>
@@ -249,7 +279,14 @@ function overviewTable(s, scores) {
   const rows = [
     averageRow("All tournament", s.teams, averageSpirit(scores, cats), cats, true),
     ...s.divisions.map((d) =>
-      averageRow(d.name, d.teams.length, averageSpirit(scores.filter((x) => x.divisionId === d.id), cats), cats, false)
+      averageRow(
+        d.name,
+        d.teams.length,
+        averageSpirit(scores.filter((x) => x.divisionId === d.id), cats),
+        cats,
+        false,
+        liveDivisionURL(source, d.name),
+      )
     ),
   ];
   return table(head, rows, "overview");
@@ -304,6 +341,26 @@ function teamTable(teams, categories, names, t) {
 }
 
 /**
+ * The game's time, linking to its page on Live!
+ * @param {SpiritScore} score
+ * @param {string | null} href
+ * @returns {string} an HTML snippet
+ */
+function gameTimeCell(score, href) {
+  const full = formatGameTime(score.time);
+  const inner = link(responsive(full, shortGameTime(score.time), shortenBelow.time), href, "game on Live! by BULA");
+  return `<td class="text-nowrap" title="${esc(full)}" data-sort="${esc(score.time)}">${inner}</td>`;
+}
+
+/**
+ * @param {string | null} href
+ * @returns {string} an HTML snippet, empty for an archive source
+ */
+function openButton(href) {
+  return href ? `<a class="btn btn-sm btn-primary" href="${esc(href)}">Open</a>` : "";
+}
+
+/**
  * Every score with an issue or a highlight, earliest game first, the cells
  * responsible coloured
  * averages alongside, to tell a harsh giver from a struggling team, each
@@ -327,6 +384,7 @@ function gameTable(scores, categories, names, t, tallies) {
       ${th("Team", false, "the team given this score, and its average received, excluding this game")}
       ${th("From", false, "the team that gave this score, and its average received, excluding this game")}
       ${spiritHead(categories, "Total", "this score, and the average the giving team gives, excluding this game")}
+      <th scope="col"><span class="visually-hidden">Open</span></th>
     </tr>
   `;
   const rows = scores
@@ -343,9 +401,7 @@ function gameTable(scores, categories, names, t, tallies) {
       const cells = categories.map((c) => `<td class="${cls(c.key)}">${score.categories[c.key]}</td>`).join("");
       return `
         <tr>
-          ${
-        shortCell(formatGameTime(score.time), shortGameTime(score.time), shortenBelow.time, "text-nowrap", score.time)
-      }
+          ${gameTimeCell(score, names.gameHref(score))}
           ${names.division(score.divisionId)}
           ${names.team(score.teamId, meanWithout(tallies.received.get(score.teamId), score.total))}
           ${
@@ -358,6 +414,7 @@ function gameTable(scores, categories, names, t, tallies) {
           <td class="${cls("total")} text-nowrap">${
         withAvg(String(score.total), meanWithout(tallies.given.get(score.fromTeamId), score.total), false)
       }</td>
+          <td class="text-end">${openButton(names.gameHref(score))}</td>
         </tr>
       `;
     });
@@ -392,9 +449,10 @@ function readTab(params) {
  * @param {SpiritScore[]} scores
  * @param {Thresholds} t
  * @param {Tab} selected
+ * @param {Source} source
  * @returns {string} an HTML snippet
  */
-function renderSpiritCard(s, scores, t, selected) {
+function renderSpiritCard(s, scores, t, selected, source) {
   const buttons = tabs
     .map((tab) =>
       `<button type="button" data-tab="${tab.id}" aria-pressed="${tab.id === selected}"
@@ -413,7 +471,7 @@ function renderSpiritCard(s, scores, t, selected) {
           Average spirit score received per game. Each score counts once, for
           the team it was given to.
         </p>
-        ${overviewTable(s, scores)}
+        ${overviewTable(s, scores, source)}
       </div>
       <div data-pane="teams" ${hidden("teams")}>
         <p class="text-body-secondary">
@@ -444,10 +502,11 @@ function renderSpiritCard(s, scores, t, selected) {
  * @param {SpiritScore[]} scores
  * @param {Thresholds} t
  * @param {Map<string, SortState>} sorts  re-applied, so a redraw keeps each table's sort
+ * @param {Source} source
  */
-function fillTables(container, s, scores, t, sorts) {
+function fillTables(container, s, scores, t, sorts, source) {
   const cats = s.spiritCategories;
-  const names = namesFor(s);
+  const names = namesFor(s, source);
   /** @type {Record<string, string>} */
   const tables = {
     teams: teamTable(teamAverages(scores, cats), cats, names, t),
@@ -466,16 +525,17 @@ function fillTables(container, s, scores, t, sorts) {
  * @param {HTMLElement} container
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
+ * @param {Source} source
  */
-function renderSpirit(container, s, scores) {
+function renderSpirit(container, s, scores, source) {
   const params = new URLSearchParams(location.search);
   const t = readThresholds(params);
-  container.innerHTML = renderSpiritCard(s, scores, t, readTab(params));
+  container.innerHTML = renderSpiritCard(s, scores, t, readTab(params), source);
   const form = /** @type {HTMLFormElement} */ (container.querySelector("#thresholds"));
   /** @type {Map<string, SortState>} */
   const sorts = new Map();
   enableSorting(container, sorts);
-  fillTables(container, s, scores, t, sorts);
+  fillTables(container, s, scores, t, sorts, source);
 
   form.addEventListener("submit", (e) => e.preventDefault());
   form.addEventListener("click", (e) => {
@@ -508,7 +568,7 @@ function renderSpirit(container, s, scores) {
     const url = new URL(location.href);
     writeThresholds(url, next);
     history.replaceState(null, "", url);
-    fillTables(container, s, scores, next, sorts);
+    fillTables(container, s, scores, next, sorts, source);
   });
 }
 
@@ -579,7 +639,7 @@ async function loadPage(el) {
     // one file per team, so this is the slow part, show the header first
     el.overview.innerHTML = `<p class="text-body-secondary">Loading spirit scores for ${s.teams} teams&hellip;</p>`;
     const scores = await adapter.loadSpiritScores(source, s);
-    renderSpirit(el.overview, s, scores);
+    renderSpirit(el.overview, s, scores, source);
   } catch (err) {
     showError(el, `Couldn't load ${t.event}: ${errorMessage(err)}`);
   }

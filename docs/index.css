@@ -54,3 +54,15 @@ code {
 .sort-indicator.sorted {
   opacity: 1;
 }
+
+/*
+  links inside a table are the cells themselves, so underlining every one
+  reads as clutter, they underline on hover instead
+*/
+.live-table a {
+  text-decoration: none;
+}
+
+.live-table a:hover {
+  text-decoration: underline;
+}
