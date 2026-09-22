@@ -10,6 +10,15 @@
 # location  where it's played, empty falls back to the live heartbeat's
 #           TOURNAMENT_LOCATION (UTR archives don't carry it)
 
+- slug: 26EUCFWRO
+  event: EUCF 2026
+  start_date: "2026-10-09"
+  location: "Wroclaw, Poland"
+  host: eucf.ultimatefederation.eu
+  version: v1.9.14
+  archive: ""
+  notes: "1.9.17, shares a host with EUCF 2025 (e2cf25)"
+
 - slug: WUCC2026
   event: WUCC 2026
   start_date: "2026-08-15"
