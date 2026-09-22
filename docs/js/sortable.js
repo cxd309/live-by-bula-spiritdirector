@@ -5,7 +5,8 @@
 // in with markup alone:
 // - <table data-sort-key="…">, a name to remember its sort under
 // - a <button class="sort-button"> in each sortable <th>, plus a
-//   <span class="sort-indicator"> for the arrow
+//   <span class="sort-indicator"> for the arrow, holding the idle glyph so
+//   an untouched table still shows every column is sortable
 // - data-sort-type="number" on a <th> to sort that column numerically
 // - data-pinned on a <tr> to keep it above the sorted rows
 // - data-sort on a <td> to sort by that instead of its text, for display
@@ -19,6 +20,9 @@
 
 /** @type {Record<SortState["dir"], string>} */
 const arrows = { asc: "▲", desc: "▼" };
+
+/** shown on every sortable column that isn't the sorted one */
+export const idleArrow = "⇅";
 
 /**
  * @param {HTMLTableRowElement} row
@@ -61,11 +65,17 @@ export function sortTable(table, { column, dir }) {
   for (const cell of header.cells) {
     cell.removeAttribute("aria-sort");
     const arrow = cell.querySelector(".sort-indicator");
-    if (arrow) arrow.textContent = "";
+    if (arrow) {
+      arrow.textContent = idleArrow;
+      arrow.classList.remove("sorted");
+    }
   }
   th.setAttribute("aria-sort", dir === "asc" ? "ascending" : "descending");
   const arrow = th.querySelector(".sort-indicator");
-  if (arrow) arrow.textContent = arrows[dir];
+  if (arrow) {
+    arrow.textContent = arrows[dir];
+    arrow.classList.add("sorted");
+  }
 }
 
 /**

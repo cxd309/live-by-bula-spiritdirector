@@ -27,7 +27,10 @@ code {
   text-transform: uppercase;
 }
 
-/* a header cell's sort control, looking like the plain header text */
+/*
+  a header cell's sort control, looking like the plain header text with a
+  sort arrow beside it, the way Live! marks its own sortable columns
+*/
 .sort-button {
   background: none;
   border: 0;
@@ -35,8 +38,19 @@ code {
   color: inherit;
   font: inherit;
   text-transform: inherit;
+  cursor: pointer;
 }
 
+/* faint on every sortable column, solid on the one in use */
 .sort-indicator {
-  margin-left: 0.25em;
+  margin-left: 0.35em;
+  opacity: 0.35;
+}
+
+.sort-button:hover .sort-indicator {
+  opacity: 0.7;
+}
+
+.sort-indicator.sorted {
+  opacity: 1;
 }

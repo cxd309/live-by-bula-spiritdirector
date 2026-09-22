@@ -22,7 +22,7 @@ import {
   sourceBadge,
   updatedText,
 } from "./page.js";
-import { enableSorting, restoreSorts } from "./sortable.js";
+import { enableSorting, idleArrow, restoreSorts } from "./sortable.js";
 import {
   averageSpirit,
   meanWithout,
@@ -157,7 +157,7 @@ function fmt(n) {
 function th(label, numeric, title = "") {
   return `<th scope="col" class="${numeric ? "text-center" : ""}" ${numeric ? `data-sort-type="number"` : ""}
     ${title ? `title="${esc(title)}"` : ""}><button type="button" class="sort-button">${label}<span
-    class="sort-indicator"></span></button></th>`;
+    class="sort-indicator">${idleArrow}</span></button></th>`;
 }
 
 /**
