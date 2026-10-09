@@ -25,6 +25,7 @@ The Games tab is one row per score received, with the reply from the same game b
 | Column       | Holds                                                                                           |
 | ------------ | ----------------------------------------------------------------------------------------------- |
 | Time         | game start, linking to that game on Live!                                                       |
+| Division     | the game's division, linking to its page on Live!                                               |
 | Team         | the team given this score, and its average received                                             |
 | Received     | this score, and the average its opponent gives                                                  |
 | Given        | what this team gave back in the same game, coloured when that score is flagged in its own right |
@@ -32,7 +33,7 @@ The Games tab is one row per score received, with the reply from the same game b
 | Rules … Comm | this score by category                                                                          |
 | Open         | that game on Live!                                                                              |
 
-Every bracketed average leaves that game out, so a score is never part of its own comparison, and is left off when there is no other game to average. A coloured Given cell means that score has a row of its own with the detail. Team and From link to that team's spirit tab on Live!, and in the Overview the division links to its Live! page. Archived tournaments have no live site to link to, so they show no links and no Open button.
+Every bracketed average leaves that game out, so a score is never part of its own comparison, and is left off when there is no other game to average. A coloured Given cell means that score has a row of its own with the detail. Team and From link to that team's spirit tab on Live!, and Division, here and in the Overview, links to its Live! page. Archived tournaments have no live site to link to, so they show no links and no Open button.
 
 Every column sorts by clicking its header, marked by a filter icon that becomes a sort arrow. Spirit categories are always shown as shorthand (Rules, Cont, Fair, Att, Comm).
 

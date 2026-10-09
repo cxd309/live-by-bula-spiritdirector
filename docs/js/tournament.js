@@ -390,6 +390,7 @@ function givenCell(back, categories, t) {
  * averages alongside, to tell a harsh giver from a struggling team, each
  * leaving this game out so the score being judged isn't part of its own
  * comparison, and left off when there's no other game to average:
+ * - Division: the game's division
  * - Team: the team given the score, and what it averages received
  * - Received: this score, and what the giver averages given
  * - Given: what this team gave back in the same game
@@ -405,6 +406,7 @@ function gameTable(scores, categories, names, t, tallies) {
   const head = `
     <tr>
       ${th("Time", false)}
+      ${th("Division", false)}
       ${th("Team", false, "the team given this score, and its average received, excluding this game")}
       ${th("Received", true, "what this team was given, and the average its opponent gives, excluding this game")}
       ${th("Given", true, "what this team gave back in the same game")}
@@ -430,6 +432,7 @@ function gameTable(scores, categories, names, t, tallies) {
       return `
         <tr>
           ${gameTimeCell(score, names.gameHref(score))}
+          ${names.division(score.divisionId)}
           ${names.team(score.teamId, meanWithout(tallies.received.get(score.teamId), score.total))}
           <td class="${cls("total")} text-nowrap">${
         withAvg(String(score.total), meanWithout(tallies.given.get(score.fromTeamId), score.total), false)
