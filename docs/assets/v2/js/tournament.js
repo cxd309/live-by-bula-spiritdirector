@@ -241,7 +241,7 @@ function table(head, rows, sortKey) {
  * @param {string} label
  * @param {number} teams
  * @param {number} games   completed games
- * @param {number} scores  scores in, each worth half a game
+ * @param {number} scores  scores in, two per completed game when all are in
  * @param {SpiritAverage} avg
  * @param {SpiritCategory[]} categories
  * @param {boolean} pinned  stays on top whatever the sort
@@ -250,13 +250,14 @@ function table(head, rows, sortKey) {
  */
 function averageRow(label, teams, games, scores, avg, categories, pinned, href = null) {
   const cells = categories.map((c) => `<td class="text-center">${fmt(avg.categories[c.key])}</td>`).join("");
-  const halves = scores / 2;
+  // a dash rather than 0% when nothing has finished yet
+  const received = games > 0 ? `${Math.round((scores / (2 * games)) * 100)}%` : "–";
   return `
     <tr ${pinned ? "data-pinned" : ""}>
       <td data-sort="${esc(label)}">${link(esc(label), href)}</td>
       <td class="text-center">${teams}</td>
       <td class="text-center">${games}</td>
-      <td class="text-center">${Number.isInteger(halves) ? halves : halves.toFixed(1)}</td>
+      <td class="text-center">${received}</td>
       ${cells}
       <td class="text-center">${fmt(avg.total)}</td>
     </tr>
@@ -278,8 +279,8 @@ function thresholdInput(t, key, label) {
 /**
  * Average spirit received per category and in total: the whole tournament,
  * then each division
- * Games counts completed games and Scores the scores in, half a game each,
- * so the two match once every score is in
+ * Games counts completed games and Scores how many of their scores are in,
+ * two per game, as a percentage
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
  * @param {Game[]} games
@@ -294,7 +295,7 @@ function overviewTable(s, scores, games, source) {
       ${th("Division", false)}
       ${th("Teams", true)}
       ${th("Games", true, "games completed")}
-      ${th("Scores", true, "spirit scores in, half a game each, so this matches Games once every score is in")}
+      ${th("Scores", true, "spirit scores in for completed games, two per game, 100% once every score is in")}
       ${spiritHead(cats)}
     </tr>
   `;

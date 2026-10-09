@@ -14,7 +14,7 @@ One row per tournament in [`docs/tournaments.yaml`](docs/tournaments.yaml): date
 
 `tournament.html?t={slug}`, the most recent tournament when `t` is left off, four tabs in the style of Live!'s spirit page:
 
-- **Overview** average spirit received per game, for the whole tournament then each division. Games counts completed games and Scores the scores in, each worth half a game, so the two match once every score is in
+- **Overview** average spirit received per game, for the whole tournament then each division. Games counts completed games and Scores the percentage of their spirit scores that are in, two per game
 - **Teams** teams whose average received total is below or above the thresholds
 - **Games** individual scores with a total below or above the thresholds, or any category at its minimum or maximum
 - **Missing** completed games still waiting on a spirit score
@@ -112,21 +112,21 @@ Pages import only from `model.js`, `source.js` and `versions.js`, never from a `
 | `docs/tournaments.yaml`               | the tournaments this site interfaces                                          |
 | `docs/index.html`                     | homepage                                                                      |
 | `docs/tournament.html`                | tournament page                                                               |
-| `docs/assets/v1/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting    |
-| `docs/assets/v1/index.css`            | the little styling on top of Bootstrap, shared by both pages                  |
-| `docs/assets/v1/js/theme.js`          | light/dark toggle, shared by every page                                       |
-| `docs/assets/v1/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates |
-| `docs/assets/v1/js/index.js`          | homepage specific js                                                          |
-| `docs/assets/v1/js/tournament.js`     | tournament page specific js                                                   |
-| `docs/assets/v1/js/spirit.js`         | averages, thresholds and issue/highlight rules over spirit scores             |
-| `docs/assets/v1/js/sortable.js`       | click-to-sort table headers                                                   |
-| `docs/assets/v1/js/live/model.js`     | version-independent JSDoc types that every adapter returns                    |
-| `docs/assets/v1/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files         |
-| `docs/assets/v1/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`       |
-| `docs/assets/v1/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version               |
-| `docs/assets/v1/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                   |
-| `docs/assets/v1/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule       |
-| `docs/assets/v1/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                          |
+| `docs/assets/v2/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting    |
+| `docs/assets/v2/index.css`            | the little styling on top of Bootstrap, shared by both pages                  |
+| `docs/assets/v2/js/theme.js`          | light/dark toggle, shared by every page                                       |
+| `docs/assets/v2/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates |
+| `docs/assets/v2/js/index.js`          | homepage specific js                                                          |
+| `docs/assets/v2/js/tournament.js`     | tournament page specific js                                                   |
+| `docs/assets/v2/js/spirit.js`         | averages, thresholds and issue/highlight rules over spirit scores             |
+| `docs/assets/v2/js/sortable.js`       | click-to-sort table headers                                                   |
+| `docs/assets/v2/js/live/model.js`     | version-independent JSDoc types that every adapter returns                    |
+| `docs/assets/v2/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files         |
+| `docs/assets/v2/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`       |
+| `docs/assets/v2/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version               |
+| `docs/assets/v2/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                   |
+| `docs/assets/v2/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule       |
+| `docs/assets/v2/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                          |
 
 ### Cache busting
 
