@@ -5,7 +5,7 @@
 // only the fields used here are typed
 
 import { loadGameTeams, opponent } from "../games.js";
-import { buildDivisions } from "../reference.js";
+import { buildDivisions, buildPitches } from "../reference.js";
 import { getSeasonJSON, mapLimit } from "../source.js";
 
 /**
@@ -31,6 +31,9 @@ import { getSeasonJSON, mapLimit } from "../source.js";
 
 export const key = "v01_09_14";
 export const covers = "1.9.14 - 1.9.17";
+
+// the games list is shaped the same on every version so far
+export { loadGames } from "../games.js";
 
 /**
  * 1.9 has no category list in the API, it is always the five WFDF
@@ -62,6 +65,7 @@ export async function loadSummary(source) {
     teams: ref.teams.length,
     players: ref.season.player_count,
     spiritCategories,
+    pitches: buildPitches(ref),
   };
 }
 

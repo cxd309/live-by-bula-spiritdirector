@@ -81,6 +81,20 @@
  * @property {number} teams
  * @property {number} players
  * @property {SpiritCategory[]} spiritCategories
+ * @property {Record<number, string>} pitches  field names keyed by reservation id
+ */
+
+/**
+ * One game on the schedule
+ * @typedef {Object} Game
+ * @property {number} gameId
+ * @property {number} divisionId     0 when its pool isn't known
+ * @property {number} homeTeamId     0 when not yet known
+ * @property {number} visitorTeamId  likewise
+ * @property {string} time           start in the event's local time, "" when not yet scheduled
+ * @property {string} pitch          the field's name, "" when not yet assigned
+ * @property {boolean} completed     Live!'s status, which on 1.9 only turns completed once
+ *   someone scores, so a finished 0-0 or forfeit never does
  */
 
 /**
@@ -105,6 +119,7 @@
  * @property {(source: Source) => Promise<TournamentSummary>} loadSummary
  * @property {(source: Source, summary: TournamentSummary) => Promise<SpiritScore[]>} loadSpiritScores
  *   every visible score, once each, read from each team's spiritreceived
+ * @property {(source: Source, summary: TournamentSummary) => Promise<Game[]>} loadGames
  */
 
 /**

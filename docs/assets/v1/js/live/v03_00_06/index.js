@@ -5,7 +5,7 @@
 // only the fields used here are typed
 
 import { loadGameTeams, opponent } from "../games.js";
-import { buildDivisions } from "../reference.js";
+import { buildDivisions, buildPitches } from "../reference.js";
 import { getSeasonJSON, mapLimit } from "../source.js";
 
 /**
@@ -34,6 +34,9 @@ import { getSeasonJSON, mapLimit } from "../source.js";
 export const key = "v03_00_06";
 export const covers = "3.0.6";
 
+// the games list is shaped the same on every version so far
+export { loadGames } from "../games.js";
+
 /**
  * @param {Source} source
  * @returns {Promise<TournamentSummary>}
@@ -55,6 +58,7 @@ export async function loadSummary(source) {
     teams: ref.teams.length,
     players: ref.season.player_count,
     spiritCategories,
+    pitches: buildPitches(ref),
   };
 }
 

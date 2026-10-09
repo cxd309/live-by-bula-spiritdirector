@@ -38,6 +38,7 @@ import {
 
 /**
  * @typedef {import("./live/model.js").Tournament} Tournament
+ * @typedef {import("./live/model.js").Game} Game
  * @typedef {import("./live/model.js").Source} Source
  * @typedef {import("./live/model.js").SpiritCategory} SpiritCategory
  * @typedef {import("./live/model.js").SpiritScore} SpiritScore
@@ -66,7 +67,12 @@ import {
  * @typedef {Object} Names
  * @property {(teamId: number, avg?: number) => string} team  a <td>, with avg after the name when given
  * @property {(divisionId: number) => string} division          a <td>
- * @property {(score: SpiritScore) => string | null} gameHref   that game's page on Live!
+ * @property {(game: GameRef) => string | null} gameHref   that game's page on Live!
+ */
+
+/**
+ * What identifies a game, which a Game and a SpiritScore both carry
+ * @typedef {Pick<Game, "gameId" | "divisionId" | "homeTeamId" | "visitorTeamId" | "time">} GameRef
  */
 
 /**
@@ -144,13 +150,13 @@ function namesFor(s, source) {
       const inner = link(responsive(name, shortDivision(name), shortenBelow.division), liveDivisionURL(source, name));
       return `<td title="${esc(name)}" data-sort="${esc(name)}">${inner}</td>`;
     },
-    gameHref: (score) =>
+    gameHref: (game) =>
       liveGameURL(
         source,
-        divisionName(score.divisionId),
-        teams.get(score.homeTeamId)?.name ?? "",
-        teams.get(score.visitorTeamId)?.name ?? "",
-        score.gameId,
+        divisionName(game.divisionId),
+        teams.get(game.homeTeamId)?.name ?? "",
+        teams.get(game.visitorTeamId)?.name ?? "",
+        game.gameId,
       ),
   };
 }
@@ -234,19 +240,23 @@ function table(head, rows, sortKey) {
  * One overview row
  * @param {string} label
  * @param {number} teams
+ * @param {number} games   completed games
+ * @param {number} scores  scores in, each worth half a game
  * @param {SpiritAverage} avg
  * @param {SpiritCategory[]} categories
  * @param {boolean} pinned  stays on top whatever the sort
  * @param {string | null} [href]  the division's page on Live!
  * @returns {string} an HTML snippet
  */
-function averageRow(label, teams, avg, categories, pinned, href = null) {
+function averageRow(label, teams, games, scores, avg, categories, pinned, href = null) {
   const cells = categories.map((c) => `<td class="text-center">${fmt(avg.categories[c.key])}</td>`).join("");
+  const halves = scores / 2;
   return `
     <tr ${pinned ? "data-pinned" : ""}>
       <td data-sort="${esc(label)}">${link(esc(label), href)}</td>
       <td class="text-center">${teams}</td>
-      <td class="text-center">${avg.games}</td>
+      <td class="text-center">${games}</td>
+      <td class="text-center">${Number.isInteger(halves) ? halves : halves.toFixed(1)}</td>
       ${cells}
       <td class="text-center">${fmt(avg.total)}</td>
     </tr>
@@ -268,27 +278,34 @@ function thresholdInput(t, key, label) {
 /**
  * Average spirit received per category and in total: the whole tournament,
  * then each division
+ * Games counts completed games and Scores the scores in, half a game each,
+ * so the two match once every score is in
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
+ * @param {Game[]} games
  * @param {Source} source
  * @returns {string} an HTML snippet
  */
-function overviewTable(s, scores, source) {
+function overviewTable(s, scores, games, source) {
   const cats = s.spiritCategories;
+  const completed = games.filter((g) => g.completed);
   const head = `
     <tr>
       ${th("Division", false)}
       ${th("Teams", true)}
-      ${th("Games", true)}
+      ${th("Games", true, "games completed")}
+      ${th("Scores", true, "spirit scores in, half a game each, so this matches Games once every score is in")}
       ${spiritHead(cats)}
     </tr>
   `;
   const rows = [
-    averageRow("All tournament", s.teams, averageSpirit(scores, cats), cats, true),
+    averageRow("All tournament", s.teams, completed.length, scores.length, averageSpirit(scores, cats), cats, true),
     ...s.divisions.map((d) =>
       averageRow(
         d.name,
         d.teams.length,
+        completed.filter((g) => g.divisionId === d.id).length,
+        scores.filter((x) => x.divisionId === d.id).length,
         averageSpirit(scores.filter((x) => x.divisionId === d.id), cats),
         cats,
         false,
@@ -349,14 +366,14 @@ function teamTable(teams, categories, names, t) {
 
 /**
  * The game's time, linking to its page on Live!
- * @param {SpiritScore} score
+ * @param {GameRef} game
  * @param {string | null} href
  * @returns {string} an HTML snippet
  */
-function gameTimeCell(score, href) {
-  const full = formatGameTime(score.time);
-  const inner = link(responsive(full, shortGameTime(score.time), shortenBelow.time), href, "game on Live! by BULA");
-  return `<td class="text-nowrap" title="${esc(full)}" data-sort="${esc(score.time)}">${inner}</td>`;
+function gameTimeCell(game, href) {
+  const full = formatGameTime(game.time);
+  const inner = link(responsive(full, shortGameTime(game.time), shortenBelow.time), href, "game on Live! by BULA");
+  return `<td class="text-nowrap" title="${esc(full)}" data-sort="${esc(game.time)}">${inner}</td>`;
 }
 
 /**
@@ -447,13 +464,69 @@ function gameTable(scores, categories, names, t, tallies) {
   return table(head, rows, "games");
 }
 
-/** @typedef {"overview" | "teams" | "games"} Tab */
+/**
+ * Pitch names sort as text, so pad numeric ones to keep 10 after 9
+ * @param {string} pitch
+ * @returns {string} an HTML snippet, one <td>
+ */
+function pitchCell(pitch) {
+  const sort = /^\d+$/.test(pitch) ? pitch.padStart(6, "0") : pitch;
+  return `<td class="text-center" data-sort="${esc(sort)}">${esc(pitch) || "–"}</td>`;
+}
+
+/**
+ * Completed games still waiting on a spirit score, one row per team that
+ * hasn't submitted, earliest first
+ * - Team: the team that owes the score
+ * - Missing: the team the score is for
+ * - Received: what Team was given by Missing in the same game, a dash when that's
+ *   outstanding too
+ * @param {Game[]} games
+ * @param {Names} names
+ * @param {SpiritTallies} tallies
+ * @returns {string} an HTML snippet
+ */
+function missingTable(games, names, tallies) {
+  const head = `
+    <tr>
+      ${th("Time", false)}
+      ${th("Pitch", false)}
+      ${th("Division", false)}
+      ${th("Team", false, "the team that hasn't submitted its score")}
+      ${th("Missing", false, "the team the missing score is for")}
+      ${th("Received", true, "the score this team was given in this game, a dash when that's missing too")}
+      <th scope="col"><span class="visually-hidden">Open</span></th>
+    </tr>
+  `;
+  const rows = games
+    .filter((g) => g.completed && g.homeTeamId && g.visitorTeamId)
+    .sort((a, b) => a.time.localeCompare(b.time) || a.pitch.localeCompare(b.pitch, undefined, { numeric: true }))
+    .flatMap((g) =>
+      [[g.homeTeamId, g.visitorTeamId], [g.visitorTeamId, g.homeTeamId]]
+        .filter(([, missing]) => !tallies.scoreFor(g.gameId, missing))
+        .map(([team, missing]) => `
+          <tr>
+            ${gameTimeCell(g, names.gameHref(g))}
+            ${pitchCell(g.pitch)}
+            ${names.division(g.divisionId)}
+            ${names.team(team)}
+            ${names.team(missing)}
+            <td class="text-center">${tallies.scoreFor(g.gameId, team)?.total ?? "–"}</td>
+            <td class="text-end">${openButton(names.gameHref(g))}</td>
+          </tr>
+        `)
+    );
+  return table(head, rows, "missing");
+}
+
+/** @typedef {"overview" | "teams" | "games" | "missing"} Tab */
 
 /** @type {{id: Tab, label: string}[]} */
 const tabs = [
   { id: "overview", label: "Overview" },
   { id: "teams", label: "Teams" },
   { id: "games", label: "Games" },
+  { id: "missing", label: "Missing" },
 ];
 
 /**
@@ -462,7 +535,7 @@ const tabs = [
  */
 function readTab(params) {
   const tab = params.get("tab");
-  return tab === "teams" || tab === "games" ? tab : "overview";
+  return tab === "teams" || tab === "games" || tab === "missing" ? tab : "overview";
 }
 
 /**
@@ -473,12 +546,13 @@ function readTab(params) {
  * redraws the tables but never the input itself
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
+ * @param {Game[]} games
  * @param {Thresholds} t
  * @param {Tab} selected
  * @param {Source} source
  * @returns {string} an HTML snippet
  */
-function renderSpiritCard(s, scores, t, selected, source) {
+function renderSpiritCard(s, scores, games, t, selected, source) {
   const buttons = tabs
     .map((tab) =>
       `<button type="button" data-tab="${tab.id}" aria-pressed="${tab.id === selected}"
@@ -497,7 +571,7 @@ function renderSpiritCard(s, scores, t, selected, source) {
           Average spirit score received per game. Each score counts once, for
           the team it was given to.
         </p>
-        ${overviewTable(s, scores, source)}
+        ${overviewTable(s, scores, games, source)}
       </div>
       <div data-pane="teams" ${hidden("teams")}>
         <p class="text-body-secondary">
@@ -515,6 +589,13 @@ function renderSpiritCard(s, scores, t, selected, source) {
           Red is an issue, green a highlight.
         </p>
         <div data-table="games"></div>
+      </div>
+      <div data-pane="missing" ${hidden("missing")}>
+        <p class="text-body-secondary">
+          Completed games still waiting on a spirit score, one row for each
+          team that hasn't submitted.
+        </p>
+        ${missingTable(games, namesFor(s, source), spiritTallies(scores))}
       </div>
     </form>
   `;
@@ -551,12 +632,13 @@ function fillTables(container, s, scores, t, sorts, source) {
  * @param {HTMLElement} container
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
+ * @param {Game[]} games
  * @param {Source} source
  */
-function renderSpirit(container, s, scores, source) {
+function renderSpirit(container, s, scores, games, source) {
   const params = new URLSearchParams(location.search);
   const t = readThresholds(params);
-  container.innerHTML = renderSpiritCard(s, scores, t, readTab(params), source);
+  container.innerHTML = renderSpiritCard(s, scores, games, t, readTab(params), source);
   const form = /** @type {HTMLFormElement} */ (container.querySelector("#thresholds"));
   /** @type {Map<string, SortState>} */
   const sorts = new Map();
@@ -664,8 +746,8 @@ async function loadPage(el) {
     `;
     // one file per team, so this is the slow part, show the header first
     el.overview.innerHTML = `<p class="text-body-secondary">Loading spirit scores for ${s.teams} teams&hellip;</p>`;
-    const scores = await adapter.loadSpiritScores(source, s);
-    renderSpirit(el.overview, s, scores, source);
+    const [scores, games] = await Promise.all([adapter.loadSpiritScores(source, s), adapter.loadGames(source, s)]);
+    renderSpirit(el.overview, s, scores, games, source);
   } catch (err) {
     showError(el, `Couldn't load ${t.event}: ${errorMessage(err)}`);
   }

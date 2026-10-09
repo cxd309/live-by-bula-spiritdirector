@@ -20,7 +20,17 @@ import { poolTypes } from "./model.js";
  * @property {{pool_id: number, poolname: string, series_id: number, ordering: string, type: number}[]} pools
  * @property {{team_id: number, name: string, abbreviation: string, series: number, country: number | null}[]} teams
  * @property {{country_id: number, name: string}[]} countries
+ * @property {{id: number, fieldname: string}[]} reservations
  */
+
+/**
+ * Field names by reservation id, the id each game is played on
+ * @param {SharedReference} ref
+ * @returns {Record<number, string>}
+ */
+export function buildPitches(ref) {
+  return Object.fromEntries(ref.reservations.map((r) => [r.id, r.fieldname]));
+}
 
 /**
  * @param {string} a
