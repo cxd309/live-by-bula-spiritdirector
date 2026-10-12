@@ -75,3 +75,81 @@ code {
 .live-table a:hover {
   text-decoration: underline;
 }
+
+/* a row that opens its detail view, see tournament.js */
+tr[data-detail] {
+  cursor: pointer;
+}
+
+/* the bracketed average after a value, kept whole */
+.avg {
+  white-space: nowrap;
+}
+
+/* the tabs, Live!'s button tabs on wide screens */
+.tab-bar .btn {
+  padding: 0.5rem 1rem;
+  margin: 0 0.5rem 0.25rem 0;
+}
+
+/*
+  on a phone, tables tighten up, averages go on a line of their own under
+  their value, and the tabs share one evenly spaced row
+*/
+@media (max-width: 767.98px) {
+  .live-table > :not(caption) > * > * {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.875rem;
+  }
+
+  .live-table thead th {
+    font-size: 0.7rem;
+  }
+
+  .live-table .avg {
+    display: block;
+    font-size: 0.75rem;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+  }
+
+  .tab-bar .btn {
+    flex: 1 1 0;
+    margin: 0;
+    padding: 0.3rem 0.25rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* a spirit comment, as written, line breaks and all */
+.comment {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* the comments table's text, in full on wide screens */
+.comment-cell {
+  min-width: 18rem;
+}
+
+/* and its first two lines on a phone, the rest is in the detail view */
+@media (max-width: 767.98px) {
+  .comment-cell {
+    min-width: 9rem;
+  }
+
+  .comment-cell .comment {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+  }
+}

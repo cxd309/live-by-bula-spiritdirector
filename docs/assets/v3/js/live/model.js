@@ -95,6 +95,8 @@
  * @property {string} pitch          the field's name, "" when not yet assigned
  * @property {boolean} completed     Live!'s status, which on 1.9 only turns completed once
  *   someone scores, so a finished 0-0 or forfeit never does
+ * @property {number | null} homeScore     goals, null until the game has started
+ * @property {number | null} visitorScore  likewise
  */
 
 /**
@@ -109,6 +111,8 @@
  * @property {number} divisionId
  * @property {Record<string, number>} categories  keyed by SpiritCategory.key
  * @property {number} total
+ * @property {string} comment     free text from the giver, "" when none was written or the
+ *   event doesn't publish spirit comments, Live! doesn't say which
  */
 
 /**

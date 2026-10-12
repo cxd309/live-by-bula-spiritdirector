@@ -174,7 +174,14 @@ function expired(body) {
 }
 
 /**
- * Fetches {base}{seasonId}{suffix}.json
+ * Each file already asked for, by source then suffix, so a file several
+ * adapters' functions need is fetched once a page load
+ * @type {WeakMap<Source, Map<string, Promise<any>>>}
+ */
+const fetched = new WeakMap();
+
+/**
+ * Fetches {base}{seasonId}{suffix}.json, once per page load
  * Live! only writes a static file when its dynamic route is asked for it, the
  * first time and again whenever the last copy has expired, so on a live
  * source a missing file usually means nobody has looked yet and an expired
@@ -184,11 +191,36 @@ function expired(body) {
  * the dynamic route sends no CORS headers either, so it can't be read from
  * here, but a "no-cors" request still reaches PHP and writes the file: fire
  * one, ignore its (opaque) response, then fetch the static file again
+ * that rewrite is the slow part, most of a second of PHP, so stale lets a
+ * caller keep an expired file that can't have changed in any way it cares
+ * about, as a team's with every score already in
  * @param {Source} source
  * @param {string} suffix e.g. "_reference" or "_games_123"
+ * @param {(body: any) => boolean} [stale]  whether an expired body is worth
+ *   rewriting, every expired one is when left out
  * @returns {Promise<any>} the decoded body, for the calling adapter to type
  */
-export async function getSeasonJSON(source, suffix) {
+export function getSeasonJSON(source, suffix, stale) {
+  const files = fetched.get(source) ?? new Map();
+  fetched.set(source, files);
+  let body = files.get(suffix);
+  if (!body) {
+    body = fetchSeasonJSON(source, suffix, stale);
+    files.set(suffix, body);
+    // a failure shouldn't stick, so the next ask tries again
+    body.catch(() => files.delete(suffix));
+  }
+  return body;
+}
+
+/**
+ * getSeasonJSON without the once per page load
+ * @param {Source} source
+ * @param {string} suffix
+ * @param {(body: any) => boolean} [stale]
+ * @returns {Promise<any>}
+ */
+async function fetchSeasonJSON(source, suffix, stale = () => true) {
   const url = new URL(`${source.seasonId}${suffix}.json`, source.base);
   const dynamic = source.kind === "live" ? dynamicURL(source, suffix) : null;
   /** @type {any} */
@@ -199,7 +231,7 @@ export async function getSeasonJSON(source, suffix) {
     const missing = err instanceof TypeError || (err instanceof HTTPError && err.status === 404);
     if (!(missing && dynamic)) throw err;
   }
-  if (body !== undefined && !(dynamic && expired(body))) return body;
+  if (body !== undefined && !(dynamic && expired(body) && stale(body))) return body;
   await fetch(/** @type {URL} */ (dynamic), { mode: "no-cors", cache: "no-store" });
   return (await getJSON(url)).body;
 }

@@ -4,7 +4,7 @@
 // the full response shapes
 // only the fields used here are typed
 
-import { loadGameTeams, opponent } from "../games.js";
+import { awaitingScores, loadGameTeams, opponent } from "../games.js";
 import { buildDivisions, buildPitches } from "../reference.js";
 import { getSeasonJSON, mapLimit } from "../source.js";
 
@@ -16,8 +16,12 @@ import { getSeasonJSON, mapLimit } from "../source.js";
 
 /**
  * The slice of _teams_{teamId}.json this file uses
+ * comments is null unless the event shows spirit comments
  * @typedef {Object} TeamDetail
- * @property {({game_id: number, total: number, is_complete: number, is_visible: number} & Record<string, number>)[]} [spiritreceived]
+ * @property {({
+ *   game_id: number, total: number, is_complete: number, is_visible: number, comments?: string | null,
+ *   [cat: string]: number | string | null | undefined
+ * })[]} [spiritreceived]
  */
 
 /**
@@ -71,12 +75,17 @@ export async function loadSpiritScores(source, summary) {
   const teams = summary.divisions.flatMap((d) => d.teams.map((t) => ({ teamId: t.id, divisionId: d.id })));
   const games = await loadGameTeams(source);
   const perTeam = await mapLimit(teams, 8, async ({ teamId, divisionId }) => {
+    // 3.0 flags rows rather than leaving them out, only count what Live!
+    // itself would show
+    /** @param {TeamDetail} d */
+    const shown = (d) => (d.spiritreceived ?? []).filter((r) => r.is_complete && r.is_visible);
     /** @type {TeamDetail} */
-    const detail = await getSeasonJSON(source, `_teams_${teamId}`);
-    return (detail.spiritreceived ?? [])
-      // 3.0 flags rows rather than leaving them out, only count what Live!
-      // itself would show
-      .filter((r) => r.is_complete && r.is_visible)
+    const detail = await getSeasonJSON(
+      source,
+      `_teams_${teamId}`,
+      (/** @type {TeamDetail} */ d) => awaitingScores(games, teamId, new Set(shown(d).map((r) => r.game_id))),
+    );
+    return shown(detail)
       .map((r) => ({
         gameId: r.game_id,
         teamId,
@@ -85,8 +94,9 @@ export async function loadSpiritScores(source, summary) {
         visitorTeamId: games.get(r.game_id)?.visitor ?? 0,
         time: games.get(r.game_id)?.time ?? "",
         divisionId,
-        categories: Object.fromEntries(summary.spiritCategories.map((c) => [c.key, r[c.key]])),
+        categories: Object.fromEntries(summary.spiritCategories.map((c) => [c.key, Number(r[c.key])])),
         total: r.total,
+        comment: (r.comments ?? "").trim(),
       }));
   });
   return perTeam.flat();

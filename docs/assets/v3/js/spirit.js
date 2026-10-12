@@ -184,6 +184,57 @@ export function scoreHighlights(s, categories, t) {
 }
 
 /**
+ * Words a spirit director wants to see in a comment, the UK SOTG committee's
+ * groups
+ * each word matches at the start of a word in any case, so "cheat" also
+ * catches "cheated" and "harass" "harassed"
+ * @typedef {Object} CommentFlag
+ * @property {string} label
+ * @property {string[]} words
+ */
+
+/** @type {CommentFlag[]} */
+export const commentFlags = [
+  { label: "Dangerous play", words: ["dangerous", "danger", "reckless", "unsafe"] },
+  { label: "Cheating", words: ["cheat", "cheating", "intentional"] },
+  {
+    label: "Harassment",
+    words: [
+      "abuse",
+      "abusive",
+      "swear",
+      "swearing",
+      "unwarranted",
+      "harass",
+      "harassment",
+      "insult",
+      "insulting",
+    ],
+  },
+];
+
+/**
+ * @param {string[]} words
+ * @returns {RegExp} matching any of them at the start of a word, through to
+ *   the end of that word
+ */
+function wordPattern(words) {
+  const alternatives = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return new RegExp(`\\b(?:${alternatives})\\w*`, "gi");
+}
+
+/** Any flagged word, for marking them in the text */
+export const flaggedWords = wordPattern(commentFlags.flatMap((f) => f.words));
+
+/**
+ * @param {string} comment
+ * @returns {CommentFlag[]} the groups it mentions, empty when none
+ */
+export function flagComment(comment) {
+  return commentFlags.filter((f) => comment.search(wordPattern(f.words)) >= 0);
+}
+
+/**
  * @param {SpiritScore[]} scores
  * @param {SpiritCategory[]} categories
  * @returns {SpiritAverage}

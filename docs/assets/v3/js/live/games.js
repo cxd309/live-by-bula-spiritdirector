@@ -16,10 +16,13 @@ import { getSeasonJSON } from "./source.js";
  * falsy fields are stripped from this list, so an unscheduled game can be
  * missing its teams entirely
  * pool is the owning pool on both, reservation the field it's played on
+ * homescore and visitorscore are the exception, put back as 0 for any game
+ * that isn't scheduled, so absent means not started
  * @typedef {Object} SharedGames
  * @property {{
  *   game_id: number, hometeam?: number, visitorteam?: number, time?: string,
- *   pool?: number, reservation?: number, status?: string
+ *   pool?: number, reservation?: number, status?: string,
+ *   homescore?: number, visitorscore?: number
  * }[]} games
  */
 
@@ -41,6 +44,8 @@ export async function loadGames(source, summary) {
     time: g.time ?? "",
     pitch: summary.pitches[g.reservation ?? 0] ?? "",
     completed: g.status === "completed",
+    homeScore: g.homescore ?? null,
+    visitorScore: g.visitorscore ?? null,
   }));
 }
 
@@ -49,6 +54,7 @@ export async function loadGames(source, summary) {
  * @property {number} home     0 when not yet known
  * @property {number} visitor  0 when not yet known
  * @property {string} time     local time, "" when not yet scheduled
+ * @property {boolean} completed  see Game.completed
  */
 
 /**
@@ -59,9 +65,32 @@ export async function loadGames(source, summary) {
 export async function loadGameTeams(source) {
   /** @type {SharedGames} */
   const list = await getSeasonJSON(source, "_games");
-  return new Map(
-    list.games.map((g) => [g.game_id, { home: g.hometeam ?? 0, visitor: g.visitorteam ?? 0, time: g.time ?? "" }]),
-  );
+  /** @type {(g: SharedGames["games"][number]) => GameTeams} */
+  const teams = (g) => ({
+    home: g.hometeam ?? 0,
+    visitor: g.visitorteam ?? 0,
+    time: g.time ?? "",
+    completed: g.status === "completed",
+  });
+  return new Map(list.games.map((g) => [g.game_id, teams(g)]));
+}
+
+/**
+ * Whether a team's file could still change: it played a completed game whose
+ * score for it isn't in yet
+ * a team with every score in is left as it is, see getSeasonJSON's stale,
+ * so an edit to a score already in only shows once the file is rewritten
+ * for some other reason
+ * @param {Map<number, GameTeams>} games
+ * @param {number} teamId
+ * @param {Set<number>} scored  the games the team's file already has its score for
+ * @returns {boolean}
+ */
+export function awaitingScores(games, teamId, scored) {
+  for (const [gameId, g] of games) {
+    if (g.completed && (g.home === teamId || g.visitor === teamId) && !scored.has(gameId)) return true;
+  }
+  return false;
 }
 
 /**

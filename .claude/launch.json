@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "simple-file-server",
+      "runtimeArgs": ["./docs", "8080", "live-by-bula-spiritdirector"],
+      "port": 8080
+    }
+  ]
+}

@@ -12,55 +12,90 @@ One row per tournament in [`docs/tournaments.yaml`](docs/tournaments.yaml): date
 
 ### Tournament
 
-`tournament.html?t={slug}`, the most recent tournament when `t` is left off, four tabs in the style of Live!'s spirit page:
+`tournament.html?t={slug}`, the most recent tournament when `t` is left off, tabs in the style of Live!'s spirit page:
 
 - **Overview** average spirit received per game, for the whole tournament then each division. Games counts completed games and Scores the percentage of their spirit scores that are in, two per game
 - **Teams** teams whose average received total is below or above the thresholds
 - **Games** individual scores with a total below or above the thresholds, or any category at its minimum or maximum
 - **Missing** completed games still waiting on a spirit score
+- **Comments** every spirit score that came with a comment, only shown when the event publishes them
 
-Issues are coloured red and highlights green, on the cells that put the row there.
+Issues are coloured red and highlights green, on the cells that put the row there. The tables hold no links: selecting a row opens it in the [detail view](#detail-view), which has the links back into Live!.
 
 The Games tab is one row per score received, with the reply from the same game beside it, so a harsh giver reads differently from a struggling team:
 
-| Column       | Holds                                                                                           |
-| ------------ | ----------------------------------------------------------------------------------------------- |
-| Time         | game start, linking to that game on Live!                                                       |
-| Division     | the game's division, linking to its page on Live!                                               |
-| Team         | the team given this score, and its average received                                             |
-| Received     | this score, and the average its opponent gives                                                  |
-| Given        | what this team gave back in the same game, coloured when that score is flagged in its own right |
-| From         | the team that gave this score, and its average received                                         |
-| Rules … Comm | this score by category                                                                          |
-| Open         | that game on Live!                                                                              |
+| Column       | Holds                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Time         | game start                                                                                                                |
+| Division     | the game's division                                                                                                       |
+| Team         | the team given this score, and its average received                                                                       |
+| Received     | this score, and the average its opponent gives                                                                            |
+| Given        | what this team gave back in the same game, and the average it gives, coloured when that score is flagged in its own right |
+| From         | the team that gave this score, and its average received                                                                   |
+| Rules … Comm | this score by category                                                                                                    |
 
-Every bracketed average leaves that game out, so a score is never part of its own comparison, and is left off when there is no other game to average. A coloured Given cell means that score has a row of its own with the detail. Team and From link to that team's spirit tab on Live!, and Division, here and in the Overview, links to its Live! page. Archived tournaments have no live site to link to, so they show no links and no Open button.
+Every bracketed average leaves that game out, so a score is never part of its own comparison, and is left off when there is no other game to average. A score's bracket is always what its giver usually gives, and a team's what it usually receives. A coloured Given cell means that score has a row of its own with the detail.
+
+The Teams tab is one row per flagged team: Team, Division, Games, its average received Total, then the average per category.
 
 The Missing tab is one row per team that hasn't submitted its score for a completed game:
 
 | Column        | Holds                                                                                       |
 | ------------- | ------------------------------------------------------------------------------------------- |
-| Time          | game start, linking to that game on Live!                                                   |
+| Time          | game start                                                                                  |
 | Pitch         | the field it was played on                                                                  |
 | Division      | the game's division                                                                         |
 | Not submitted | the team that hasn't submitted                                                              |
 | For           | the team the score is for                                                                   |
 | Received      | the score the Not submitted team was given in the same game, a dash when that's missing too |
-| Open          | that game on Live!                                                                          |
 
 A game counts as completed when Live! says so. On 1.9 that only happens once someone scores, so a finished 0-0 or forfeit never shows up as missing.
 
+The Comments tab is one row per comment, earliest first:
+
+| Column   | Holds                             |
+| -------- | --------------------------------- |
+| Time     | game start                        |
+| Division | the game's division               |
+| From     | the team that wrote it            |
+| For      | the team it's about               |
+| Total    | the score it came with            |
+| Comment  | the comment, with any flags above |
+
+Comments are flagged with the UK SOTG committee's keyword groups, a red badge for each group a comment mentions and the words themselves marked. Each word matches the start of a word in any case, so `cheat` also catches "cheated". Sorting by Comment puts flagged ones first. The groups are `commentFlags` in [`spirit.js`](docs/assets/v3/js/spirit.js):
+
+| Flag           | Words                                                                               |
+| -------------- | ----------------------------------------------------------------------------------- |
+| Dangerous play | dangerous, danger, reckless, unsafe                                                 |
+| Cheating       | cheat, cheating, intentional                                                        |
+| Harassment     | abuse, abusive, swear, swearing, unwarranted, harass, harassment, insult, insulting |
+
 Every column sorts by clicking its header, marked by a filter icon that becomes a sort arrow. Spirit categories are always shown as shorthand (Rules, Cont, Fair, Att, Comm).
+
+On a phone, below Bootstrap's `md` breakpoint, the tables keep their key columns only: the spirit categories go, headers shorten (Division to Div, Received to Rec, Not submitted to Not sub), team names become their abbreviations, with the Div column still there to tell clubs with several teams apart, bracketed averages drop to a line of their own, comments are cut to two lines, and the tabs share one row.
+
+### Detail view
+
+Selecting any row opens a modal, a small browser over three kinds of page, each linking to the others:
+
+| Page     | Opened from              | Shows                                                                                                                                                         |
+| -------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Game     | Games, Missing, Comments | the result, both scores side by side per category with the total and the averages to read it against, any score not yet submitted, and both comments, flagged |
+| Team     | Teams, or a game         | its averages received and given, every completed game with its result and both scores bracketed, and the comments it received and gave                        |
+| Division | Overview, or a game/team | its averages received, then each of its teams, lowest received first                                                                                          |
+
+Team names, a team's games, a division's teams and the division under a title all open their page. Each page opened is a history entry, so the modal's Back button and a phone's back gesture step back through them, and closing returns to the tab underneath. Each page has a button to the same thing on Live!, except on an archive, which has no live site to link to.
 
 The view is kept in the URL, so a link opens exactly what was on screen. Defaults are left out:
 
-| Parameter                | Default     | Meaning                                         |
-| ------------------------ | ----------- | ----------------------------------------------- |
-| `t`                      | most recent | tournament slug                                 |
-| `tab`                    | `overview`  | `overview`, `teams`, `games` or `missing`       |
-| `team_low` / `team_high` | `9` / `11`  | team average received below / above is flagged  |
-| `game_low` / `game_high` | `7` / `13`  | a single score's total below / above is flagged |
-| `theme`                  | system      | `light` or `dark`                               |
+| Parameter                | Default     | Meaning                                                                                                    |
+| ------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------- |
+| `t`                      | most recent | tournament slug                                                                                            |
+| `tab`                    | `overview`  | `overview`, `teams`, `games`, `missing` or `comments`                                                      |
+| `detail`                 | none        | the open detail page: `game-{id}`, `team-{id}` or `division-{id}`, `division-0` being the whole tournament |
+| `team_low` / `team_high` | `9` / `11`  | team average received below / above is flagged                                                             |
+| `game_low` / `game_high` | `7` / `13`  | a single score's total below / above is flagged                                                            |
+| `theme`                  | system      | `light` or `dark`                                                                                          |
 
 ## How this works
 
@@ -74,8 +109,11 @@ The live deployment is always tried first. If it fails, the site falls back to t
 - **Hosts get reused** for the next edition of an event (`eucf.ultimatefederation.eu` moved from EUCF 2025 to 2026), so a heartbeat reporting a different season id counts as live being unavailable
 - **Live! only writes a static file the first time it is asked for**, through a dynamic route with no CORS headers. The server also sends no CORS headers on a missing file, so the browser sees it as a network error rather than a 404. When that happens on a live source the site fires the dynamic route with `mode: "no-cors"`, which still makes the server write the file, then fetches the static file again
 - **Live! only rewrites a static file when it is asked for again after it expires.** During an event most files live for two minutes, but a team's file can sit hours out of date if nobody has opened that team on Live!. So whenever a live file's `meta.expires_timestamp` has passed, the site fires the dynamic route the same way, then fetches the static file again. Otherwise scores submitted since the last rewrite would still show as missing
+- **That rewrite is slow**, most of a second of PHP per file, so after a quiet spell it would cost one per team (WUCC's 136 teams took about 13s). An expired team file is therefore only rewritten when that team has a completed game whose score for it isn't in the file yet. A team with every score in keeps its file as it is, so a finished event loads in a couple of seconds and a running one only refreshes the teams still owed a score. The catch is that an edit to a score already in only shows once that file is rewritten for some other reason
+- **Each file is fetched once per page load**, however many parts of the page need it
 - **Spirit scores** come from each team's `_teams_{teamId}.json` (`spiritreceived`), fetched eight at a time so a live server isn't flooded. Each score counts once, for the team it was given to. On 3.0 only scores Live! itself would show (complete and visible) are counted
-- **Games** come from `_games.json`, with each game's division from its pool and its pitch from `_reference.json`'s `reservations`
+- **Spirit comments** come from the same `spiritreceived` rows. They're blanked unless the event turns spirit comments on, so a blank one can mean either none was written or they're hidden. EUF's events publish them, WFDF's so far don't
+- **Games** come from `_games.json`, with each game's division from its pool, its pitch from `_reference.json`'s `reservations`, and its result from `homescore` and `visitorscore`
 
 ### Tournaments
 
@@ -107,27 +145,27 @@ Pages import only from `model.js`, `source.js` and `versions.js`, never from a `
 
 ### Project structure
 
-| Path                                  | Description                                                                   |
-| ------------------------------------- | ----------------------------------------------------------------------------- |
-| `docs/`                               | GitHub Pages web root                                                         |
-| `docs/tournaments.yaml`               | the tournaments this site interfaces                                          |
-| `docs/index.html`                     | homepage                                                                      |
-| `docs/tournament.html`                | tournament page                                                               |
-| `docs/assets/v3/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting    |
-| `docs/assets/v3/index.css`            | the little styling on top of Bootstrap, shared by both pages                  |
-| `docs/assets/v3/js/theme.js`          | light/dark toggle, shared by every page                                       |
-| `docs/assets/v3/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates |
-| `docs/assets/v3/js/index.js`          | homepage specific js                                                          |
-| `docs/assets/v3/js/tournament.js`     | tournament page specific js                                                   |
-| `docs/assets/v3/js/spirit.js`         | averages, thresholds and issue/highlight rules over spirit scores             |
-| `docs/assets/v3/js/sortable.js`       | click-to-sort table headers                                                   |
-| `docs/assets/v3/js/live/model.js`     | version-independent JSDoc types that every adapter returns                    |
-| `docs/assets/v3/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files         |
-| `docs/assets/v3/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`       |
-| `docs/assets/v3/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version               |
-| `docs/assets/v3/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                   |
-| `docs/assets/v3/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule       |
-| `docs/assets/v3/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                          |
+| Path                                  | Description                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------------- |
+| `docs/`                               | GitHub Pages web root                                                            |
+| `docs/tournaments.yaml`               | the tournaments this site interfaces                                             |
+| `docs/index.html`                     | homepage                                                                         |
+| `docs/tournament.html`                | tournament page                                                                  |
+| `docs/assets/v3/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting       |
+| `docs/assets/v3/index.css`            | the little styling on top of Bootstrap, shared by both pages                     |
+| `docs/assets/v3/js/theme.js`          | light/dark toggle, shared by every page                                          |
+| `docs/assets/v3/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates    |
+| `docs/assets/v3/js/index.js`          | homepage specific js                                                             |
+| `docs/assets/v3/js/tournament.js`     | tournament page specific js                                                      |
+| `docs/assets/v3/js/spirit.js`         | averages, thresholds, issue/highlight rules and comment flags over spirit scores |
+| `docs/assets/v3/js/sortable.js`       | click-to-sort table headers                                                      |
+| `docs/assets/v3/js/live/model.js`     | version-independent JSDoc types that every adapter returns                       |
+| `docs/assets/v3/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files            |
+| `docs/assets/v3/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`          |
+| `docs/assets/v3/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version                  |
+| `docs/assets/v3/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                      |
+| `docs/assets/v3/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule          |
+| `docs/assets/v3/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                             |
 
 ### Cache busting
 

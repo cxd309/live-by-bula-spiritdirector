@@ -4,7 +4,7 @@
 // openapi-1.9.14.yaml for the full response shapes
 // only the fields used here are typed
 
-import { loadGameTeams, opponent } from "../games.js";
+import { awaitingScores, loadGameTeams, opponent } from "../games.js";
 import { buildDivisions, buildPitches } from "../reference.js";
 import { getSeasonJSON, mapLimit } from "../source.js";
 
@@ -18,8 +18,9 @@ import { getSeasonJSON, mapLimit } from "../source.js";
 /**
  * The slice of _teams_{teamId}.json this file uses
  * 1.9 enforces no visibility, a row exists once the opponent has submitted
+ * comments is null on every row unless the event shows spirit comments
  * @typedef {Object} TeamDetail
- * @property {({game_id: number, total: number} & Record<string, number>)[]} [spiritreceived]
+ * @property {({game_id: number, total: number, comments?: string | null, [cat: string]: number | string | null | undefined})[]} [spiritreceived]
  */
 
 /**
@@ -79,7 +80,12 @@ export async function loadSpiritScores(source, summary) {
   const games = await loadGameTeams(source);
   const perTeam = await mapLimit(teams, 8, async ({ teamId, divisionId }) => {
     /** @type {TeamDetail} */
-    const detail = await getSeasonJSON(source, `_teams_${teamId}`);
+    const detail = await getSeasonJSON(
+      source,
+      `_teams_${teamId}`,
+      (/** @type {TeamDetail} */ d) =>
+        awaitingScores(games, teamId, new Set((d.spiritreceived ?? []).map((r) => r.game_id))),
+    );
     return (detail.spiritreceived ?? []).map((r) => ({
       gameId: r.game_id,
       teamId,
@@ -88,8 +94,9 @@ export async function loadSpiritScores(source, summary) {
       visitorTeamId: games.get(r.game_id)?.visitor ?? 0,
       time: games.get(r.game_id)?.time ?? "",
       divisionId,
-      categories: Object.fromEntries(spiritCategories.map((c) => [c.key, r[c.key]])),
+      categories: Object.fromEntries(spiritCategories.map((c) => [c.key, Number(r[c.key])])),
       total: r.total,
+      comment: (r.comments ?? "").trim(),
     }));
   });
   return perTeam.flat();
