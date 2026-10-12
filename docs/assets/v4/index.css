@@ -76,8 +76,12 @@ code {
   text-decoration: underline;
 }
 
-/* a row that opens its detail view, see tournament.js */
-tr[data-detail] {
+/*
+  a row that opens its detail view, see tournament.js, or on the homepage
+  its tournament, see index.js
+*/
+tr[data-detail],
+tr[data-href] {
   cursor: pointer;
 }
 

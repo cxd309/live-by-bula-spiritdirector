@@ -30,6 +30,7 @@ import {
 import { enableSorting, idleIcon, restoreSorts } from "./sortable.js";
 import {
   averageSpirit,
+  commentFlags,
   flagComment,
   flaggedWords,
   meanWithout,
@@ -589,6 +590,27 @@ function markedComment(comment) {
 function flagBadges(comment) {
   const badges = flagComment(comment).map((f) => `<span class="badge text-bg-danger me-1">${esc(f.label)}</span>`);
   return badges.length ? `<div class="mb-1">${badges.join("")}</div>` : "";
+}
+
+/**
+ * The words each flag looks for, under the comments table, from the same
+ * list the matching uses so the two can't drift apart
+ * @returns {string} an HTML snippet
+ */
+function flagKey() {
+  const rows = commentFlags.map((f) => `
+    <div class="mb-1">
+      <span class="badge text-bg-danger me-1">${esc(f.label)}</span>${esc(f.words.join(", "))}
+    </div>
+  `);
+  return `
+    <div class="small text-body-secondary mt-3">
+      <p class="mb-1">
+        Flagged keywords. Each matching the start of a word in any case, so "cheat" also catches "cheated":
+      </p>
+      ${rows.join("")}
+    </div>
+  `;
 }
 
 /**
@@ -1322,6 +1344,7 @@ function renderSpiritCard(s, scores, games, t, available, selected, source) {
             Select a row for the full score.
           </p>
           ${commentTable(scores, names)}
+          ${flagKey()}
         </div>`
       : ""
   }

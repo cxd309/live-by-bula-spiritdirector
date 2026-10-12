@@ -195,22 +195,9 @@ export function scoreHighlights(s, categories, t) {
 
 /** @type {CommentFlag[]} */
 export const commentFlags = [
-  { label: "Dangerous play", words: ["dangerous", "danger", "reckless", "unsafe"] },
-  { label: "Cheating", words: ["cheat", "cheating", "intentional"] },
-  {
-    label: "Harassment",
-    words: [
-      "abuse",
-      "abusive",
-      "swear",
-      "swearing",
-      "unwarranted",
-      "harass",
-      "harassment",
-      "insult",
-      "insulting",
-    ],
-  },
+  { label: "Dangerous play", words: ["danger", "reckless", "unsafe"] },
+  { label: "Cheating", words: ["cheat", "intentional"] },
+  { label: "Harassment", words: ["abuse", "abusive", "swear", "unwarranted", "harass", "insult", "rude"] },
 ];
 
 /**

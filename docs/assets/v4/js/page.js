@@ -5,6 +5,7 @@
 
 // @ts-ignore -- no local types for a CDN module, see JsYaml below
 import jsyaml from "https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.mjs";
+import { liveTournamentURL } from "./live/links.js";
 
 /**
  * @typedef {import("./live/model.js").Tournament} Tournament
@@ -57,22 +58,28 @@ export function tournamentHref(slug) {
   return `tournament.html?t=${encodeURIComponent(slug)}`;
 }
 
+/** The ultimate-tournament-results site, where the archives come from */
+const utrHomepage = "https://cxd309.github.io/ultimate-tournament-results/";
+
 /**
- * Green Live or grey Archive badge, linking to the _reference.json in use
+ * Green Live or grey Archive badge, the one way off this site to where the
+ * data comes from: Live to the tournament's own Live! homepage, Archive to
+ * ultimate-tournament-results
  * @param {Tournament} t
  * @param {Source} source
  * @returns {string} an HTML snippet
  */
 export function sourceBadge(t, source) {
-  const href = esc(new URL(`${source.seasonId}_reference.json`, source.base).href);
   if (source.kind === "live") {
-    return `<a class="badge text-bg-success text-decoration-none" href="${href}">Live</a>`;
+    const href = liveTournamentURL(source);
+    const badge = `class="badge text-bg-success text-decoration-none" title="open in Live! by BULA"`;
+    return href ? `<a ${badge} href="${esc(href)}">Live</a>` : `<span ${badge}>Live</span>`;
   }
   // hovering the badge says why live wasn't used
   const title = esc(
     t.host ? `https://${t.host} unavailable, using archive: ${source.liveError}` : "archive only, no live host",
   );
-  return `<a class="badge text-bg-secondary text-decoration-none" href="${href}" title="${title}">Archive</a>`;
+  return `<a class="badge text-bg-secondary text-decoration-none" href="${utrHomepage}" title="${title}">Archive</a>`;
 }
 
 /**

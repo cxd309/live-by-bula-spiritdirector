@@ -3,7 +3,6 @@
 // Homepage: one table row per tournament in tournaments.yaml, shown straight
 // away from the yaml then filled in from that tournament's own Live! data
 
-import { liveTournamentURL } from "./live/links.js";
 import { resolveSource } from "./live/source.js";
 import { getVersion } from "./live/versions.js";
 import { errorMessage, esc, formatDateRange, loadTournamentList, sourceBadge, tournamentHref } from "./page.js";
@@ -25,16 +24,8 @@ import { errorMessage, esc, formatDateRange, loadTournamentList, sourceBadge, to
  */
 
 /**
- * @param {string} html  the status, an HTML snippet
- * @param {Source} source
- * @returns {string} an HTML snippet, linked to Live! for a live source
- */
-function liveStatus(html, source) {
-  const href = liveTournamentURL(source);
-  return href ? `<a href="${esc(href)}" title="open in Live! by BULA">${html}</a>` : html;
-}
-
-/**
+ * A tournament's row, opening its page here wherever it's clicked, see
+ * openOnClick, the name staying a real link for keyboards and new tabs
  * @param {Tournament} t
  * @param {RowCells} cells
  * @returns {string} an HTML snippet
@@ -42,16 +33,29 @@ function liveStatus(html, source) {
 function row(t, cells) {
   const href = esc(tournamentHref(t.slug));
   return `
-    <tr data-slug="${esc(t.slug)}">
+    <tr data-slug="${esc(t.slug)}" data-href="${href}">
       <td class="text-nowrap">${cells.date}</td>
-      <td><a href="${href}">${esc(t.event)}</a></td>
+      <td><a class="text-reset fw-semibold" href="${href}">${esc(t.event)}</a></td>
       <td>${cells.location}</td>
       <td>${cells.status}</td>
       <td class="text-center">${cells.divisions}</td>
       <td class="text-center">${cells.teams}</td>
-      <td class="text-end"><a class="btn btn-sm btn-primary" href="${href}">Open</a></td>
     </tr>
   `;
+}
+
+/**
+ * Opens a row's tournament on a click anywhere in it, except on a link of
+ * its own: the name, already going there, and the Live/Archive badge, the
+ * one way to the data's source
+ * @param {HTMLElement} tbody
+ */
+function openOnClick(tbody) {
+  tbody.addEventListener("click", (e) => {
+    if (!(e.target instanceof Element) || e.target.closest("a")) return;
+    const tr = e.target.closest("tr[data-href]");
+    if (tr instanceof HTMLElement && tr.dataset.href) location.href = tr.dataset.href;
+  });
 }
 
 /**
@@ -80,8 +84,7 @@ function loadedCells(t, source, s) {
   return {
     date: esc(formatDateRange(s.start, s.end)),
     location: esc(t.location || source.location),
-    // the status links to the tournament's own Live! pages, where there are any
-    status: liveStatus(esc(s.status), source) + ` ${sourceBadge(t, source)}`,
+    status: sourceBadge(t, source),
     divisions: String(s.divisions.length),
     teams: String(s.teams),
   };
@@ -136,5 +139,6 @@ async function loadTournaments(tbody, status) {
 const tbody = document.getElementById("tournaments");
 const status = document.getElementById("tournaments-status");
 if (tbody && status) {
+  openOnClick(tbody);
   loadTournaments(tbody, status);
 }
