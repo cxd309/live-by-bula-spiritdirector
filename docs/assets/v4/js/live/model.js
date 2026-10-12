@@ -95,6 +95,7 @@
  * @property {string} pitch          the field's name, "" when not yet assigned
  * @property {boolean} completed     Live!'s status, which on 1.9 only turns completed once
  *   someone scores, so a finished 0-0 or forfeit never does
+ * @property {boolean} forfeit       never played, so no spirit scores are owed, see games.js forfeited
  * @property {number | null} homeScore     goals, null until the game has started
  * @property {number | null} visitorScore  likewise
  */

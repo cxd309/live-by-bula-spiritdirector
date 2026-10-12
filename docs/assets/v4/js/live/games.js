@@ -18,13 +18,33 @@ import { getSeasonJSON } from "./source.js";
  * pool is the owning pool on both, reservation the field it's played on
  * homescore and visitorscore are the exception, put back as 0 for any game
  * that isn't scheduled, so absent means not started
+ * forfeit is 3.0's alone, see forfeited
  * @typedef {Object} SharedGames
- * @property {{
+ * @property {SharedGame[]} games
+ */
+
+/**
+ * @typedef {{
  *   game_id: number, hometeam?: number, visitorteam?: number, time?: string,
  *   pool?: number, reservation?: number, status?: string,
- *   homescore?: number, visitorscore?: number
- * }[]} games
+ *   homescore?: number, visitorscore?: number, forfeit?: number
+ * }} SharedGame
  */
+
+/**
+ * Whether a game was forfeited, so never played and owed no spirit scores
+ * 3.0 says so with forfeit, and records the game 0-0 and completed
+ * 1.9 has no flag and its pools don't carry the forfeit score, but events
+ * record one as 1-0 (WBUC 2025's forfeits against Israel), a result no
+ * game of ultimate really ends on, so a completed 1-0 counts as one too
+ * @param {SharedGame} g
+ * @returns {boolean}
+ */
+function forfeited(g) {
+  if (g.forfeit) return true;
+  const goals = [g.homescore ?? 0, g.visitorscore ?? 0];
+  return g.status === "completed" && Math.min(...goals) === 0 && Math.max(...goals) === 1;
+}
 
 /**
  * Every game on the schedule, played or not
@@ -44,6 +64,7 @@ export async function loadGames(source, summary) {
     time: g.time ?? "",
     pitch: summary.pitches[g.reservation ?? 0] ?? "",
     completed: g.status === "completed",
+    forfeit: forfeited(g),
     homeScore: g.homescore ?? null,
     visitorScore: g.visitorscore ?? null,
   }));
@@ -55,6 +76,7 @@ export async function loadGames(source, summary) {
  * @property {number} visitor  0 when not yet known
  * @property {string} time     local time, "" when not yet scheduled
  * @property {boolean} completed  see Game.completed
+ * @property {boolean} forfeit    see Game.forfeit
  */
 
 /**
@@ -65,19 +87,20 @@ export async function loadGames(source, summary) {
 export async function loadGameTeams(source) {
   /** @type {SharedGames} */
   const list = await getSeasonJSON(source, "_games");
-  /** @type {(g: SharedGames["games"][number]) => GameTeams} */
+  /** @type {(g: SharedGame) => GameTeams} */
   const teams = (g) => ({
     home: g.hometeam ?? 0,
     visitor: g.visitorteam ?? 0,
     time: g.time ?? "",
     completed: g.status === "completed",
+    forfeit: forfeited(g),
   });
   return new Map(list.games.map((g) => [g.game_id, teams(g)]));
 }
 
 /**
  * Whether a team's file could still change: it played a completed game whose
- * score for it isn't in yet
+ * score for it isn't in yet, forfeits never getting one
  * a team with every score in is left as it is, see getSeasonJSON's stale,
  * so an edit to a score already in only shows once the file is rewritten
  * for some other reason
@@ -88,7 +111,7 @@ export async function loadGameTeams(source) {
  */
 export function awaitingScores(games, teamId, scored) {
   for (const [gameId, g] of games) {
-    if (g.completed && (g.home === teamId || g.visitor === teamId) && !scored.has(gameId)) return true;
+    if (g.completed && !g.forfeit && (g.home === teamId || g.visitor === teamId) && !scored.has(gameId)) return true;
   }
   return false;
 }

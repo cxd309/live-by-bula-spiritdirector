@@ -324,10 +324,20 @@ function thresholdInput(t, key, label) {
 }
 
 /**
+ * Whether a game should have its two spirit scores by now: it's finished,
+ * and was played rather than forfeited
+ * @param {Game} g
+ * @returns {boolean}
+ */
+function owesSpirit(g) {
+  return g.completed && !g.forfeit;
+}
+
+/**
  * Average spirit received in total and per category: the whole tournament,
  * then each division
  * Games counts completed games and Scores how many of their scores are in,
- * two per game, as a percentage
+ * two per game, as a percentage, forfeits in neither since they're owed none
  * @param {TournamentSummary} s
  * @param {SpiritScore[]} scores
  * @param {Game[]} games
@@ -335,12 +345,16 @@ function thresholdInput(t, key, label) {
  */
 function overviewTable(s, scores, games) {
   const cats = s.spiritCategories;
-  const completed = games.filter((g) => g.completed);
+  const completed = games.filter(owesSpirit);
+  // only scores for games that owe them count towards Scores, so one given
+  // for a forfeit anyway can't take it past 100%
+  const owed = new Set(completed.map((g) => g.gameId));
+  const counted = scores.filter((x) => owed.has(x.gameId));
   const head = `
     <tr>
       ${divisionHead}
       ${th("Teams", true)}
-      ${th("Games", true, "games completed")}
+      ${th("Games", true, "games completed, not counting forfeits")}
       ${th("Scores", true, "spirit scores in for completed games, two per game, 100% once every score is in")}
       ${th("Total", true)}
       ${categoryHead(cats)}
@@ -351,7 +365,7 @@ function overviewTable(s, scores, games) {
       "All tournament",
       s.teams,
       completed.length,
-      scores.length,
+      counted.length,
       averageSpirit(scores, cats),
       cats,
       true,
@@ -362,7 +376,7 @@ function overviewTable(s, scores, games) {
         d.name,
         d.teams.length,
         completed.filter((g) => g.divisionId === d.id).length,
-        scores.filter((x) => x.divisionId === d.id).length,
+        counted.filter((x) => x.divisionId === d.id).length,
         averageSpirit(scores.filter((x) => x.divisionId === d.id), cats),
         cats,
         false,
@@ -548,7 +562,7 @@ function missingTable(games, names, tallies) {
     </tr>
   `;
   const rows = games
-    .filter((g) => g.completed && g.homeTeamId && g.visitorTeamId)
+    .filter((g) => owesSpirit(g) && g.homeTeamId && g.visitorTeamId)
     .sort((a, b) => a.time.localeCompare(b.time) || a.pitch.localeCompare(b.pitch, undefined, { numeric: true }))
     .flatMap((g) =>
       [[g.homeTeamId, g.visitorTeamId], [g.visitorTeamId, g.homeTeamId]]
@@ -773,11 +787,13 @@ function detailHeading(heading) {
 
 /**
  * A game's result for one side, e.g. "15-14 W"
+ * a forfeit's score says nothing, 3.0 records them 0-0, so it just says so
  * @param {Game | undefined} g
  * @param {number} teamId
  * @returns {string} plain text, a dash before the game has a score
  */
 function result(g, teamId) {
+  if (g?.forfeit) return "Forfeit";
   if (!g || g.homeScore === null || g.visitorScore === null) return "–";
   const home = g.homeTeamId === teamId;
   const own = home ? g.homeScore : g.visitorScore;
@@ -815,7 +831,7 @@ function gameDetail(ctx, gameId) {
   const cats = ctx.s.spiritCategories;
   const score = ctx.scores.find((x) => x.gameId === gameId);
   const g = ctx.games.get(gameId)
-    ?? (score && { ...score, pitch: "", completed: true, homeScore: null, visitorScore: null });
+    ?? (score && { ...score, pitch: "", completed: true, forfeit: false, homeScore: null, visitorScore: null });
   if (!g || !g.homeTeamId || !g.visitorTeamId) return null;
 
   const sides = [[g.homeTeamId, g.visitorTeamId], [g.visitorTeamId, g.homeTeamId]].map(([teamId, from]) => {
@@ -854,10 +870,14 @@ function gameDetail(ctx, gameId) {
   `;
 
   const played = g.homeScore !== null && g.visitorScore !== null;
+  // a forfeit's score says nothing, see result
+  const middle = g.forfeit
+    ? `<span class="badge text-bg-secondary fs-6">Forfeit</span>`
+    : `<span class="fs-3 fw-bold">${played ? `${g.homeScore} – ${g.visitorScore}` : "v"}</span>`;
   const scoreboard = `
     <div class="d-flex align-items-center text-center gap-2 mb-3">
       <div class="w-50">${detailButton(esc(sides[0].team.name), `team-${g.homeTeamId}`, "fw-semibold")}</div>
-      <div class="fs-3 fw-bold text-nowrap">${played ? `${g.homeScore} – ${g.visitorScore}` : "v"}</div>
+      <div class="text-nowrap">${middle}</div>
       <div class="w-50">${detailButton(esc(sides[1].team.name), `team-${g.visitorTeamId}`, "fw-semibold")}</div>
     </div>
   `;
@@ -894,7 +914,7 @@ function gameDetail(ctx, gameId) {
     ),
   ];
 
-  const missing = g.completed
+  const missing = owesSpirit(g)
     ? sides.filter((x) => !x.score).map((x) =>
       `<p class="text-warning-emphasis small mb-2">
         <i class="bi bi-exclamation-triangle me-1"></i>${esc(x.giver.name)} hasn't submitted a score for ${
@@ -914,7 +934,11 @@ function gameDetail(ctx, gameId) {
     meta: [esc(pitch), detailButton(esc(division.name), `division-${g.divisionId}`)].filter(Boolean).join(" · "),
     body: `
       ${scoreboard}
-      ${detailTable(head, rows)}
+      ${
+      g.forfeit && sides.every((x) => !x.score)
+        ? `<p class="text-body-secondary fst-italic">Forfeited, so no spirit scores are owed.</p>`
+        : detailTable(head, rows)
+    }
       ${missing.join("")}
       ${
       ctx.hasComments
@@ -1062,7 +1086,8 @@ function divisionDetail(ctx, divisionId) {
   const division = ctx.s.divisions.find((d) => d.id === divisionId);
   if (divisionId && !division) return null;
   const scores = division ? ctx.scores.filter((x) => x.divisionId === divisionId) : ctx.scores;
-  const completed = [...ctx.games.values()].filter((g) => g.completed && (!division || g.divisionId === divisionId));
+  const completed = [...ctx.games.values()].filter((g) => owesSpirit(g) && (!division || g.divisionId === divisionId));
+  const owed = new Set(completed.map((g) => g.gameId));
   const avg = averageSpirit(scores, cats);
   const teamCount = division ? division.teams.length : ctx.s.teams;
   const averages = detailTable(
@@ -1108,7 +1133,7 @@ function divisionDetail(ctx, divisionId) {
   return {
     title: division ? division.name : "All tournament",
     meta: `${teamCount} teams · ${completed.length} games completed · ${
-      scoresIn(scores.length, completed.length)
+      scoresIn(scores.filter((x) => owed.has(x.gameId)).length, completed.length)
     } of scores in`,
     body: `
       ${averages}
