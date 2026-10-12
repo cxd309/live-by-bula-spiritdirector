@@ -62,7 +62,7 @@ The Comments tab is one row per comment, earliest first:
 | Total    | the score it came with            |
 | Comment  | the comment, with any flags above |
 
-Comments are flagged with the UK SOTG committee's keyword groups, a red badge for each group a comment mentions and the words themselves marked. Each word matches the start of a word in any case, so `cheat` also catches "cheated". Sorting by Comment puts flagged ones first. The groups are `commentFlags` in [`spirit.js`](docs/assets/v3/js/spirit.js):
+Comments are flagged with the UK SOTG committee's keyword groups, a red badge for each group a comment mentions and the words themselves marked. Each word matches the start of a word in any case, so `cheat` also catches "cheated". Sorting by Comment puts flagged ones first. The groups are `commentFlags` in [`spirit.js`](docs/assets/v4/js/spirit.js):
 
 | Flag           | Words                                                                               |
 | -------------- | ----------------------------------------------------------------------------------- |
@@ -151,21 +151,21 @@ Pages import only from `model.js`, `source.js` and `versions.js`, never from a `
 | `docs/tournaments.yaml`               | the tournaments this site interfaces                                             |
 | `docs/index.html`                     | homepage                                                                         |
 | `docs/tournament.html`                | tournament page                                                                  |
-| `docs/assets/v3/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting       |
-| `docs/assets/v3/index.css`            | the little styling on top of Bootstrap, shared by both pages                     |
-| `docs/assets/v3/js/theme.js`          | light/dark toggle, shared by every page                                          |
-| `docs/assets/v3/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates    |
-| `docs/assets/v3/js/index.js`          | homepage specific js                                                             |
-| `docs/assets/v3/js/tournament.js`     | tournament page specific js                                                      |
-| `docs/assets/v3/js/spirit.js`         | averages, thresholds, issue/highlight rules and comment flags over spirit scores |
-| `docs/assets/v3/js/sortable.js`       | click-to-sort table headers                                                      |
-| `docs/assets/v3/js/live/model.js`     | version-independent JSDoc types that every adapter returns                       |
-| `docs/assets/v3/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files            |
-| `docs/assets/v3/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`          |
-| `docs/assets/v3/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version                  |
-| `docs/assets/v3/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                      |
-| `docs/assets/v3/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule          |
-| `docs/assets/v3/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                             |
+| `docs/assets/v4/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting       |
+| `docs/assets/v4/index.css`            | the little styling on top of Bootstrap, shared by both pages                     |
+| `docs/assets/v4/js/theme.js`          | light/dark toggle, shared by every page                                          |
+| `docs/assets/v4/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates    |
+| `docs/assets/v4/js/index.js`          | homepage specific js                                                             |
+| `docs/assets/v4/js/tournament.js`     | tournament page specific js                                                      |
+| `docs/assets/v4/js/spirit.js`         | averages, thresholds, issue/highlight rules and comment flags over spirit scores |
+| `docs/assets/v4/js/sortable.js`       | click-to-sort table headers                                                      |
+| `docs/assets/v4/js/live/model.js`     | version-independent JSDoc types that every adapter returns                       |
+| `docs/assets/v4/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files            |
+| `docs/assets/v4/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`          |
+| `docs/assets/v4/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version                  |
+| `docs/assets/v4/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                      |
+| `docs/assets/v4/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule          |
+| `docs/assets/v4/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                             |
 
 ### Cache busting
 
