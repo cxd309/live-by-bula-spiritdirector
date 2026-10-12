@@ -17,6 +17,15 @@ code {
 }
 
 /*
+  .visually-hidden is position: absolute, so without a positioned ancestor a
+  hidden header label (the Open column's) escapes the scroll container and
+  widens the whole page on a phone
+*/
+.table-responsive {
+  position: relative;
+}
+
+/*
   Live!'s table headers: muted, bold, uppercase
   Bootstrap colours each th itself, so a class on thead wouldn't reach them
 */

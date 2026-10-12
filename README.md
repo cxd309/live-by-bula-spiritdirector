@@ -38,15 +38,15 @@ Every bracketed average leaves that game out, so a score is never part of its ow
 
 The Missing tab is one row per team that hasn't submitted its score for a completed game:
 
-| Column   | Holds                                                                          |
-| -------- | ------------------------------------------------------------------------------ |
-| Time     | game start, linking to that game on Live!                                      |
-| Pitch    | the field it was played on                                                     |
-| Division | the game's division                                                            |
-| Team     | the team that hasn't submitted                                                 |
-| Missing  | the team the score is for                                                      |
-| Received | the score this team was given in the same game, a dash when that's missing too |
-| Open     | that game on Live!                                                             |
+| Column        | Holds                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Time          | game start, linking to that game on Live!                                                   |
+| Pitch         | the field it was played on                                                                  |
+| Division      | the game's division                                                                         |
+| Not submitted | the team that hasn't submitted                                                              |
+| For           | the team the score is for                                                                   |
+| Received      | the score the Not submitted team was given in the same game, a dash when that's missing too |
+| Open          | that game on Live!                                                                          |
 
 A game counts as completed when Live! says so. On 1.9 that only happens once someone scores, so a finished 0-0 or forfeit never shows up as missing.
 
@@ -73,6 +73,7 @@ The live deployment is always tried first. If it fails, the site falls back to t
 
 - **Hosts get reused** for the next edition of an event (`eucf.ultimatefederation.eu` moved from EUCF 2025 to 2026), so a heartbeat reporting a different season id counts as live being unavailable
 - **Live! only writes a static file the first time it is asked for**, through a dynamic route with no CORS headers. The server also sends no CORS headers on a missing file, so the browser sees it as a network error rather than a 404. When that happens on a live source the site fires the dynamic route with `mode: "no-cors"`, which still makes the server write the file, then fetches the static file again
+- **Live! only rewrites a static file when it is asked for again after it expires.** During an event most files live for two minutes, but a team's file can sit hours out of date if nobody has opened that team on Live!. So whenever a live file's `meta.expires_timestamp` has passed, the site fires the dynamic route the same way, then fetches the static file again. Otherwise scores submitted since the last rewrite would still show as missing
 - **Spirit scores** come from each team's `_teams_{teamId}.json` (`spiritreceived`), fetched eight at a time so a live server isn't flooded. Each score counts once, for the team it was given to. On 3.0 only scores Live! itself would show (complete and visible) are counted
 - **Games** come from `_games.json`, with each game's division from its pool and its pitch from `_reference.json`'s `reservations`
 
@@ -112,21 +113,21 @@ Pages import only from `model.js`, `source.js` and `versions.js`, never from a `
 | `docs/tournaments.yaml`               | the tournaments this site interfaces                                          |
 | `docs/index.html`                     | homepage                                                                      |
 | `docs/tournament.html`                | tournament page                                                               |
-| `docs/assets/v2/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting    |
-| `docs/assets/v2/index.css`            | the little styling on top of Bootstrap, shared by both pages                  |
-| `docs/assets/v2/js/theme.js`          | light/dark toggle, shared by every page                                       |
-| `docs/assets/v2/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates |
-| `docs/assets/v2/js/index.js`          | homepage specific js                                                          |
-| `docs/assets/v2/js/tournament.js`     | tournament page specific js                                                   |
-| `docs/assets/v2/js/spirit.js`         | averages, thresholds and issue/highlight rules over spirit scores             |
-| `docs/assets/v2/js/sortable.js`       | click-to-sort table headers                                                   |
-| `docs/assets/v2/js/live/model.js`     | version-independent JSDoc types that every adapter returns                    |
-| `docs/assets/v2/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files         |
-| `docs/assets/v2/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`       |
-| `docs/assets/v2/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version               |
-| `docs/assets/v2/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                   |
-| `docs/assets/v2/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule       |
-| `docs/assets/v2/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                          |
+| `docs/assets/v3/`                     | the pages' JavaScript and CSS, in a versioned directory, see Cache busting    |
+| `docs/assets/v3/index.css`            | the little styling on top of Bootstrap, shared by both pages                  |
+| `docs/assets/v3/js/theme.js`          | light/dark toggle, shared by every page                                       |
+| `docs/assets/v3/js/page.js`           | shared page helpers: the tournament list, escaping, badges, shorthands, dates |
+| `docs/assets/v3/js/index.js`          | homepage specific js                                                          |
+| `docs/assets/v3/js/tournament.js`     | tournament page specific js                                                   |
+| `docs/assets/v3/js/spirit.js`         | averages, thresholds and issue/highlight rules over spirit scores             |
+| `docs/assets/v3/js/sortable.js`       | click-to-sort table headers                                                   |
+| `docs/assets/v3/js/live/model.js`     | version-independent JSDoc types that every adapter returns                    |
+| `docs/assets/v3/js/live/source.js`    | finding (heartbeat or archive) and fetching a tournament's JSON files         |
+| `docs/assets/v3/js/live/versions.js`  | registry mapping a version key to its adapter, like UTR's `liveversion`       |
+| `docs/assets/v3/js/live/reference.js` | the parts of `_reference.json` shaped the same on every version               |
+| `docs/assets/v3/js/live/games.js`     | the parts of `_games.json` shaped the same on every version                   |
+| `docs/assets/v3/js/live/links.js`     | URLs back into a deployment's own Live! pages, its routes and slug rule       |
+| `docs/assets/v3/js/live/vXX_YY_ZZ/`   | one adapter per Live! response shape                                          |
 
 ### Cache busting
 

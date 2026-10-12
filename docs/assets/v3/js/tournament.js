@@ -478,9 +478,9 @@ function pitchCell(pitch) {
 /**
  * Completed games still waiting on a spirit score, one row per team that
  * hasn't submitted, earliest first
- * - Team: the team that owes the score
- * - Missing: the team the score is for
- * - Received: what Team was given by Missing in the same game, a dash when that's
+ * - Not submitted: the team that owes the score
+ * - For: the team the score is for
+ * - Received: what Not submitted was given by For in the same game, a dash when that's
  *   outstanding too
  * @param {Game[]} games
  * @param {Names} names
@@ -493,9 +493,15 @@ function missingTable(games, names, tallies) {
       ${th("Time", false)}
       ${th("Pitch", false)}
       ${th("Division", false)}
-      ${th("Team", false, "the team that hasn't submitted its score")}
-      ${th("Missing", false, "the team the missing score is for")}
-      ${th("Received", true, "the score this team was given in this game, a dash when that's missing too")}
+      ${th("Not submitted", false, "the team that hasn't submitted its score")}
+      ${th("For", false, "the team the missing score is for")}
+      ${
+    th(
+      "Received",
+      true,
+      "the score the team that hasn't submitted was given in this game, a dash when that's missing too",
+    )
+  }
       <th scope="col"><span class="visually-hidden">Open</span></th>
     </tr>
   `;

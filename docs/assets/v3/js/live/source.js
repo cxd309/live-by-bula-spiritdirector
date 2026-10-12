@@ -161,10 +161,24 @@ export async function mapLimit(items, limit, fn) {
 }
 
 /**
+ * Whether a file's own meta block says it has gone stale
+ * during an event most files live for a couple of minutes, but nothing
+ * rewrites one until the dynamic route is asked for it again, so a file
+ * nobody has opened on Live! lately can be hours behind
+ * @param {any} body
+ * @returns {boolean} false when there is no meta block, as on the heartbeat
+ */
+function expired(body) {
+  const expires = body?.meta?.expires_timestamp;
+  return typeof expires === "number" && expires * 1000 < Date.now();
+}
+
+/**
  * Fetches {base}{seasonId}{suffix}.json
- * Live! only writes a static file the first time its dynamic route is asked
- * for it, so on a live source a missing file usually means nobody has looked
- * yet
+ * Live! only writes a static file when its dynamic route is asked for it, the
+ * first time and again whenever the last copy has expired, so on a live
+ * source a missing file usually means nobody has looked yet and an expired
+ * one that nobody has looked lately
  * the server only sends CORS headers on files that exist, so the browser
  * sees a missing one as a bare TypeError ("Failed to fetch"), not a 404
  * the dynamic route sends no CORS headers either, so it can't be read from
@@ -176,13 +190,16 @@ export async function mapLimit(items, limit, fn) {
  */
 export async function getSeasonJSON(source, suffix) {
   const url = new URL(`${source.seasonId}${suffix}.json`, source.base);
+  const dynamic = source.kind === "live" ? dynamicURL(source, suffix) : null;
+  /** @type {any} */
+  let body;
   try {
-    return (await getJSON(url)).body;
+    body = (await getJSON(url)).body;
   } catch (err) {
-    const dynamic = source.kind === "live" ? dynamicURL(source, suffix) : null;
     const missing = err instanceof TypeError || (err instanceof HTTPError && err.status === 404);
     if (!(missing && dynamic)) throw err;
-    await fetch(dynamic, { mode: "no-cors", cache: "no-store" });
-    return (await getJSON(url)).body;
   }
+  if (body !== undefined && !(dynamic && expired(body))) return body;
+  await fetch(/** @type {URL} */ (dynamic), { mode: "no-cors", cache: "no-store" });
+  return (await getJSON(url)).body;
 }
